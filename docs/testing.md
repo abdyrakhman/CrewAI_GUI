@@ -28,6 +28,7 @@
 .venv\Scripts\python.exe tests\test_ui_features.py
 .venv\Scripts\python.exe tests\test_ui_workspace.py
 .venv\Scripts\python.exe tests\test_ui_confirmations.py
+.venv\Scripts\python.exe tests\test_ui_i18n.py
 ```
 
 Каждый печатает строки `PASS`/`FAIL` и итог `… RESULT: PASS`. Код возврата `0` —
@@ -51,6 +52,7 @@
 | `test_ui_features.py` | роли, шаблоны, удаление проектов |
 | `test_ui_workspace.py` | выбор рабочей области, сброс, ошибки пути |
 | `test_ui_confirmations.py` | окно подтверждения, «до конца запуска», фоновый запуск |
+| `test_ui_i18n.py` | переключение языка RU/EN и сохранение выбора |
 
 ## Как устроены тесты
 
@@ -62,14 +64,6 @@
   (`channel="chrome"`, headless). Если Chrome не найден — набор упадёт с понятной
   ошибкой.
 - **Никаких сетевых вызовов** к провайдерам: base URL указывает на мок.
-
-## CI
-
-На каждый PR запускается `.github/workflows/tests.yml`: компиляция и пять наборов
-на Ubuntu (`runner_e2e`, `http_api`, `features_api`, `cancel`, `braced_text`).
-`test_workspace_api` в CI не входит: в CrewAI на Linux запись `output_file` в
-рабочую область ведёт себя иначе, поэтому набор остаётся обязательным локально на
-Windows.
 
 ## Добавить тест
 

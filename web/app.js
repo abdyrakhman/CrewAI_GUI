@@ -1024,6 +1024,7 @@ async function init() {
     state.runs = runs.runs || [];
     state.settings = settings.settings;
     state.roles = roles.roles || [];
+    StudioI18n.setLang(state.settings?.ui_language === "en" ? "en" : "ru");
     document.documentElement.dataset.theme = state.settings?.theme === "light" ? "light" : "dark";
     renderSidebar();
 
@@ -1573,6 +1574,20 @@ function renderSettings() {
     <div class="view-inner">
       <div class="settings-grid">
         <div class="stack">
+          <div class="card">
+            <div class="card-head"><h2>Интерфейс</h2></div>
+            <div class="card-body">
+              <div class="field">
+                <label>Язык интерфейса</label>
+                <select data-setting="ui_language">
+                  <option value="ru"${settings.ui_language !== "en" ? " selected" : ""}>Русский</option>
+                  <option value="en"${settings.ui_language === "en" ? " selected" : ""}>English</option>
+                </select>
+                <span class="hint-text">Интерфейс перерисуется сразу после выбора. Ключи, проекты и история не меняются.</span>
+              </div>
+            </div>
+          </div>
+
           <div class="card">
             <div class="card-head"><h2>Модели по умолчанию</h2></div>
             <div class="card-body">
@@ -2842,6 +2857,7 @@ async function saveSettings() {
     toast("Настройки сохранены", "ok");
     renderSidebar();
     if (state.view === "settings") renderSettings();
+    StudioI18n.setLang(state.settings?.ui_language === "en" ? "en" : "ru");
   } catch (error) {
     toast(error.message, "err");
   }
@@ -3277,6 +3293,12 @@ function bindGlobalEvents() {
 
   document.addEventListener("change", async (event) => {
     const node = event.target;
+    if (node.dataset?.setting === "ui_language") {
+      state.settings = { ...(state.settings || {}), ui_language: node.value === "en" ? "en" : "ru" };
+      StudioI18n.setLang(state.settings.ui_language);
+      await saveSettings();
+      return;
+    }
     if (node.id === "tpl-source") {
       const project = (state.crews || []).find((item) => item.id === node.value);
       if (project) $("#tpl-title").value = project.name;
@@ -3373,4 +3395,5 @@ function bindGlobalEvents() {
 
 /* ------------------------------------------------------------------- boot */
 bindGlobalEvents();
+StudioI18n.watch();
 init();
