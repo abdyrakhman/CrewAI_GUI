@@ -72,6 +72,8 @@ from the Templates section, rename or delete on the card.
 The folder where agents read and write files; by default `data/workspaces/<project id>`.
 
 - **Choose** opens the built-in browser (drives, folders, create folder).
+- **Other drives:** pick a drive; if the folder is outside the allowed roots, the browser shows
+  **Allow this folder** — one click adds the root to settings and opens it.
 - **Reset** returns the default folder.
 - Allowed roots: your home folder, the project folder and anything in Settings → Folder access.
   Service directories (`Windows\System32`, `Startup`, `.ssh`, `site-packages`, `app`, `web`,

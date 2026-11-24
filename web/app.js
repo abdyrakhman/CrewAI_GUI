@@ -1518,8 +1518,44 @@ async function loadPicker(path) {
         <span class="hint-text">${data.writable ? "папка доступна для записи" : "нет прав на запись"}</span>
       </div>`;
   } catch (error) {
-    container.innerHTML = `<div class="alert err">${esc(error.message)}</div>`;
+    container.innerHTML = pickerErrorPanel(path, error.message);
     throw error;
+  }
+}
+
+function pickerErrorPanel(path, message) {
+  return `<div class="alert err">${esc(message)}</div>
+    <p class="hint-text">Проводник видит домашнюю папку и папку проекта. Другой корень можно разрешить
+      одной кнопкой — он сохранится в настройках и будет доступен и дальше.</p>
+    <div class="row" style="gap:8px;margin-top:10px">
+      <button class="btn btn-primary" data-action="allow-root" data-path="${esc(path || "")}" ${path ? "" : "disabled"}>
+        ${icon("check", 15)} Разрешить эту папку
+      </button>
+      <button class="btn btn-ghost" data-action="fs-open" data-path="">Домашняя папка</button>
+    </div>`;
+}
+
+async function allowRoot(path) {
+  const raw = String(path || "").trim();
+  if (!raw) return;
+  const current = Array.isArray(state.settings?.fs_roots) ? state.settings.fs_roots : [];
+  if (!current.some((item) => String(item).toLowerCase() === raw.toLowerCase())) {
+    try {
+      const data = await api("/api/settings", {
+        method: "PUT",
+        body: { settings: { fs_roots: [...current, raw] } },
+      });
+      state.settings = data.settings;
+    } catch (error) {
+      toast(error.message, "err");
+      return;
+    }
+  }
+  toast(`Папка разрешена: ${raw}`, "ok");
+  try {
+    await loadPicker(raw);
+  } catch {
+    /* the panel already explains what happened */
   }
 }
 
@@ -3018,6 +3054,9 @@ function bindGlobalEvents() {
         break;
       case "fs-go":
         await loadPicker($("#fs-path")?.value || "").catch(() => {});
+        break;
+      case "allow-root":
+        await allowRoot(trigger.dataset.path || "");
         break;
       case "fs-mkdir":
         await makePickerDir();
