@@ -37,6 +37,7 @@ DEFAULT_SETTINGS: dict = {
     "llm_timeout": 120,
     "fs_roots": [],
     "allow_network_tools": [],
+    "ui_language": "ru",
     "theme": "dark",
 }
 

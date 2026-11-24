@@ -15,3 +15,6 @@ __pycache__/
 АР.md
 run-*.md
 deepseek_text_*.txt
+
+# локальные инструменты (в репозиторий не публикуются)
+scripts/
