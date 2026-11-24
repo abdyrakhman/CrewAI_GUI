@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 import string
+import time
 from pathlib import Path
 
 from .config import DATA_DIR, ROOT
@@ -118,9 +119,36 @@ def is_default(crew: dict) -> bool:
     return not str(crew.get("workspace") or "").strip()
 
 
+def check_access(path: Path) -> tuple[bool, bool]:
+    """(readable, writable) proven by listing the folder and writing a probe file."""
+    readable = False
+    try:
+        next(path.iterdir(), None)
+        readable = True
+    except StopIteration:
+        readable = True
+    except OSError:
+        readable = False
+
+    writable_now = False
+    if readable:
+        probe = path / f".studio-write-test-{os.getpid()}-{time.time_ns() % 100000}"
+        try:
+            probe.write_text("ok", encoding="utf-8")
+            writable_now = True
+        except OSError:
+            writable_now = False
+        finally:
+            try:
+                probe.unlink(missing_ok=True)
+            except OSError:
+                pass
+    return readable, writable_now
+
+
 def writable(path: Path) -> bool:
-    """Permission probe without writing anything into the folder."""
-    return os.access(str(path), os.W_OK)
+    """Whether the app can create files in the folder (real probe, not just a bit)."""
+    return check_access(path)[1]
 
 
 def drives() -> list[str]:
@@ -182,6 +210,7 @@ def list_directory(raw: str | None, roots: list[Path] | None = None) -> dict:
         except OSError:
             continue
 
+    readable, writable_now = check_access(path)
     parent = path.parent if path.parent != path else None
     return {
         "path": str(path),
@@ -192,7 +221,8 @@ def list_directory(raw: str | None, roots: list[Path] | None = None) -> dict:
         "drives": drives(),
         "roots": [str(root) for root in allowed],
         "home": str(Path.home()),
-        "writable": writable(path) if path.exists() else False,
+        "readable": readable,
+        "writable": writable_now,
     }
 
 
@@ -225,6 +255,7 @@ def describe(crew: dict, roots: list[Path] | None = None) -> dict:
             count = sum(1 for _ in path.iterdir())
     except OSError:
         exists, is_dir, count = False, False, 0
+    readable, writable_now = check_access(path) if exists and is_dir else (False, False)
     return {
         "path": str(path),
         "note": note,
@@ -233,6 +264,7 @@ def describe(crew: dict, roots: list[Path] | None = None) -> dict:
         "is_default": is_default(crew),
         "exists": exists,
         "is_dir": is_dir,
-        "writable": writable(path) if exists and is_dir else False,
+        "readable": readable,
+        "writable": writable_now,
         "files": count,
     }

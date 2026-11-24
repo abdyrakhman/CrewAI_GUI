@@ -82,6 +82,8 @@ The folder where agents read and write files; by default `data/workspaces/<proje
 If a project was imported with a forbidden workspace, the run falls back to the default
 folder and prints a warning.
 
+**Folder permissions.** Opening a folder checks read and write access immediately: for a read-only folder the **Choose this folder** button is disabled, and saving such a workspace is rejected with an explanation.
+
 ## Inputs and curly braces
 
 Inputs are fields substituted into task text as `{name}`. Add them in the Inputs block.
