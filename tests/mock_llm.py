@@ -112,6 +112,29 @@ def _split(text: str, size: int) -> list[str]:
 def build_answer(prompt: str) -> str:
     """Return a ReAct-style completion whose final answer looks like real output."""
     lowered = prompt.lower()
+    if os.environ.get("MOCK_LANG") == "en":
+        if "final" in lowered or "report" in lowered:
+            body = (
+                "## Summary\n\n"
+                "The team completed the scenario. Below is a digest of the earlier steps.\n\n"
+                "### Key findings\n"
+                "1. The collected facts support the main hypothesis.\n"
+                "2. The main risk is missing data on two metrics.\n"
+                "3. A pilot on a single segment is recommended.\n\n"
+                "### Next steps\n"
+                "- Validate the metrics on a quarterly sample.\n"
+                "- Agree the pilot budget.\n"
+            )
+        else:
+            body = (
+                "## Agent result\n\n"
+                "Materials on the topic were collected and structured.\n\n"
+                "- Fact 1: the segment grows at double-digit rates.\n"
+                "- Fact 2: major players invest in automation.\n"
+                "- Fact 3: data on small businesses is insufficient.\n\n"
+                "**Conclusion:** the topic is promising but needs validation on a narrow segment.\n"
+            )
+        return "Thought: I have enough information to answer. Final Answer: " + body
     if "итогов" in lowered or "final" in lowered and "report" in lowered:
         body = (
             "## Итог\n\n"
