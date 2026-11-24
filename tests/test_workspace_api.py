@@ -77,6 +77,18 @@ def main() -> int:
         status, payload = request("/api/fs?path=Z%3A%5Cdefinitely-missing-folder-xyz")
         check("missing folder returns 400", status == 400, str(payload)[:120])
 
+        # A folder outside the allowed roots can be allowed from the picker.
+        anchor = Path(ROOT.anchor if hasattr(ROOT, "anchor") else "/")
+        status, payload = request(f"/api/fs?path={urllib.parse.quote(str(anchor))}")
+        check("drive root is blocked before permission", status in {400, 403}, str(payload)[:120])
+        settings = request("/api/settings")[1]
+        roots = list(settings["settings"].get("fs_roots") or [])
+        roots.append(str(anchor))
+        status, payload = request("/api/settings", "PUT", {"settings": {"fs_roots": roots}})
+        check("root can be saved in settings", status == 200 and str(anchor) in payload["settings"]["fs_roots"], str(payload)[:140])
+        status, payload = request(f"/api/fs?path={urllib.parse.quote(str(anchor))}")
+        check("drive root becomes browsable after permission", status == 200, str(payload)[:120])
+
         status, payload = request("/api/fs/mkdir", "POST", {"parent": str(DATA), "name": "nested"})
         check("POST /api/fs/mkdir creates folder", status == 201 and Path(payload["path"]).is_dir(), str(payload)[:120])
         status, payload = request("/api/fs/mkdir", "POST", {"parent": str(DATA), "name": "nested"})

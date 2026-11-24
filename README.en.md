@@ -12,6 +12,7 @@ editing.
   expected output, assignee, context, output format) in ordinary forms.
 - **Project workspace** — every project has its own folder on disk; agents read and write
   only there. Pick it with the built-in folder browser, create a new one, or keep the default.
+  For another drive the browser offers **Allow this folder**, which saves the root in settings.
 - **Access requests that wait** — when an agent needs a file outside the workspace, the run
   pauses and you choose: allow once, allow until the run ends, or deny. No answer in five
   minutes closes the request.
