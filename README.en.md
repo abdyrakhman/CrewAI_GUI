@@ -4,7 +4,7 @@ A local desktop-style GUI for [CrewAI](https://crewai.com): build teams of AI ag
 run them and watch model answers stream in real time — no console, no YAML, no Python
 editing.
 
-![Team builder](docs/screenshots/builder.png)
+![Team builder](docs/screenshots/en/builder.png)
 
 ## Features
 
@@ -33,6 +33,19 @@ editing.
 - **Generated Python** — the Code button shows a script that reproduces the run.
 - **English and Russian UI** — switch the interface language in Settings; the interface
   re-renders immediately.
+
+## Screenshots
+
+| | |
+|---|---|
+| ![Welcome](docs/screenshots/en/welcome.png) | ![Team builder](docs/screenshots/en/builder.png) |
+| First launch | Team builder |
+| ![Run](docs/screenshots/en/run.png) | ![Roles](docs/screenshots/en/roles.png) |
+| Live run | Role library |
+| ![Templates](docs/screenshots/en/templates.png) | ![Settings](docs/screenshots/en/settings.png) |
+| Templates | Settings |
+| ![Workspace picker](docs/screenshots/en/workspace-picker.png) | ![History](docs/screenshots/en/history.png) |
+| Workspace picker | Run history |
 
 ## Quick start
 

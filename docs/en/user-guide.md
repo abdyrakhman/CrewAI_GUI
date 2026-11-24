@@ -20,6 +20,8 @@ printed in the console. Manual start:
 
 The server listens on `127.0.0.1` only; there is no password, so remote access is refused.
 
+![Team builder](../screenshots/en/builder.png)
+
 ## First project
 
 1. Press **New project**, or pick a **Template**.
@@ -63,6 +65,8 @@ A template is a saved project skeleton: agents, tasks, model, settings. The work
 not part of a template — it belongs to the project. Save with **Save as template**, apply
 from the Templates section, rename or delete on the card.
 
+![Workspace picker](../screenshots/en/workspace-picker.png)
+
 ## Project workspace
 
 The folder where agents read and write files; by default `data/workspaces/<project id>`.
@@ -85,6 +89,8 @@ braces stay as text and the check panel warns you. Add the field if you want sub
 
 CrewAI also matches `{name}` inside doubled braces, so doubling them does not help — the
 app handles it for you.
+
+![Live run](../screenshots/en/run.png)
 
 ## Running
 
@@ -124,6 +130,8 @@ unfinished on startup.
 
 Shows the workspace and task results; upload a file for the agent to read. Viewing and
 downloading stay inside the workspace and the outputs folder.
+
+![Settings](../screenshots/en/settings.png)
 
 ## Settings
 
