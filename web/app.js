@@ -2850,10 +2850,15 @@ function collectSettings() {
   return settings;
 }
 
-async function saveSettings() {
+async function saveSettings(preferredLanguage) {
   try {
     const data = await api("/api/settings", { method: "PUT", body: { settings: collectSettings() } });
-    state.settings = data.settings;
+    // Older or foreign backends may not know ui_language yet: keep the choice the
+    // user just made instead of silently reverting to Russian.
+    state.settings = {
+      ...data.settings,
+      ui_language: data.settings?.ui_language || preferredLanguage || state.settings?.ui_language || "ru",
+    };
     toast("Настройки сохранены", "ok");
     renderSidebar();
     if (state.view === "settings") renderSettings();
@@ -3294,9 +3299,10 @@ function bindGlobalEvents() {
   document.addEventListener("change", async (event) => {
     const node = event.target;
     if (node.dataset?.setting === "ui_language") {
-      state.settings = { ...(state.settings || {}), ui_language: node.value === "en" ? "en" : "ru" };
-      StudioI18n.setLang(state.settings.ui_language);
-      await saveSettings();
+      const chosen = node.value === "en" ? "en" : "ru";
+      state.settings = { ...(state.settings || {}), ui_language: chosen };
+      StudioI18n.setLang(chosen);
+      await saveSettings(chosen);
       return;
     }
     if (node.id === "tpl-source") {
