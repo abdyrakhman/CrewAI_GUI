@@ -1,0 +1,17 @@
+.venv/
+.setup/
+.deploy-tmp/
+data/
+studio/
+crewai
+research/
+__pycache__/
+*.pyc
+*.pyo
+.env
+*.log
+
+# внутренние материалы (не для публикации)
+АР.md
+run-*.md
+deepseek_text_*.txt
