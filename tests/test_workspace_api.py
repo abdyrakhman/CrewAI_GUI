@@ -72,6 +72,9 @@ def main() -> int:
         status, payload = request(f"/api/fs?path={urllib.parse.quote(str(DATA))}")
         check("GET /api/fs lists directories", status == 200 and payload["path"] == str(DATA), str(payload)[:120])
         check("fs response has drives", isinstance(payload.get("drives"), list) and payload["drives"], str(payload.get("drives")))
+        check("fs reports read and write access",
+              payload.get("readable") is True and payload.get("writable") is True,
+              f"readable={payload.get('readable')} writable={payload.get('writable')}")
         check("fs response has parent", bool(payload.get("parent")))
 
         status, payload = request("/api/fs?path=Z%3A%5Cdefinitely-missing-folder-xyz")

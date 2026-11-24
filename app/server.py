@@ -460,6 +460,13 @@ class StudioHandler(BaseHTTPRequestHandler):
                 except OSError as exc:
                     self._error(400, f"Не удалось создать папку: {exc}")
                     return True
+                readable, writable_now = workspace.check_access(target)
+                if not readable:
+                    self._error(400, "Нет прав на чтение этой папки — агенты не смогут её открыть")
+                    return True
+                if not writable_now:
+                    self._error(400, "Нет прав на запись в эту папку — агенты не смогут сохранять файлы")
+                    return True
                 saved = store.save_crew(candidate)
                 self._send_json(200, {"crew": saved, "workspace": workspace.describe(saved)})
                 return True

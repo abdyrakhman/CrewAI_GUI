@@ -1422,6 +1422,7 @@ async function refreshTemplates() {
 
 /* -------------------------------------------------------------- workspace */
 let pickerPath = "";
+let pickerAccess = { readable: true, writable: true };
 
 async function setWorkspace(raw) {
   if (!state.crew) return;
@@ -1492,6 +1493,7 @@ async function loadPicker(path) {
   try {
     const data = await api(`/api/fs?path=${encodeURIComponent(path || "")}`);
     pickerPath = data.path;
+    pickerAccess = { readable: data.readable !== false, writable: data.writable !== false };
     container.innerHTML = `
       <div class="field">
         <label>Путь</label>
@@ -1515,8 +1517,17 @@ async function loadPicker(path) {
       <div class="row" style="margin-top:12px;gap:6px">
         <input type="text" id="fs-new-name" placeholder="Имя новой папки" style="max-width:240px">
         <button class="btn btn-sm" data-action="fs-mkdir">${icon("plus", 14)} Создать</button>
-        <span class="hint-text">${data.writable ? "папка доступна для записи" : "нет прав на запись"}</span>
+        <span class="hint-text">${data.readable
+          ? data.writable
+            ? "чтение и запись доступны"
+            : "только чтение — выбрать эту папку нельзя"
+          : "нет доступа к папке"}</span>
       </div>`;
+    const chooseButton = $('[data-action="fs-choose"]');
+    if (chooseButton) {
+      chooseButton.disabled = !data.writable;
+      chooseButton.title = data.writable ? "" : "Нужны права на запись в папку";
+    }
   } catch (error) {
     container.innerHTML = pickerErrorPanel(path, error.message);
     throw error;
@@ -3062,6 +3073,10 @@ function bindGlobalEvents() {
         await makePickerDir();
         break;
       case "fs-choose":
+        if (!pickerAccess.writable) {
+          toast("В эту папку нельзя записывать: выберите другую или разрешите доступ", "err");
+          break;
+        }
         closeModal();
         await setWorkspace(pickerPath);
         break;
