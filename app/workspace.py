@@ -238,7 +238,14 @@ def make_directory(parent: str, name: str, roots: list[Path] | None = None) -> s
     target = base / clean
     if target.exists():
         raise ValueError("Такая папка уже существует")
-    target.mkdir(parents=True)
+    try:
+        target.mkdir(parents=True)
+    except OSError as exc:
+        reason = getattr(exc, "strerror", None) or str(exc)
+        raise ValueError(
+            f"Не удалось создать папку в {base}: {reason}. "
+            "Выберите папку, куда разрешена запись, или измените права Windows."
+        ) from exc
     return str(target)
 
 

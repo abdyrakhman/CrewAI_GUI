@@ -1520,8 +1520,9 @@ async function loadPicker(path) {
         <span class="hint-text">${data.readable
           ? data.writable
             ? "чтение и запись доступны"
-            : "только чтение — выбрать эту папку нельзя"
+            : "только для чтения: Windows не разрешает запись. Выберите папку, куда можно писать (например, внутри E:\\CrewAI), или вернитесь к папке по умолчанию."
           : "нет доступа к папке"}</span>
+        ${data.writable ? "" : `<button class="btn btn-sm" data-action="fs-default">Папка по умолчанию</button>`}
       </div>`;
     const chooseButton = $('[data-action="fs-choose"]');
     if (chooseButton) {
@@ -3071,6 +3072,10 @@ function bindGlobalEvents() {
         break;
       case "fs-mkdir":
         await makePickerDir();
+        break;
+      case "fs-default":
+        closeModal();
+        await setWorkspace("");
         break;
       case "fs-choose":
         if (!pickerAccess.writable) {
