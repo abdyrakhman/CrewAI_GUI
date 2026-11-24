@@ -231,15 +231,20 @@ def main() -> int:
             check("opt-in enables installed network tools", any(row["available"] for row in network_rows))
         raw_request("/api/settings", method="PUT", body={"settings": {"allow_network_tools": False}})
 
+        rejected_tools: list[dict] = []
         spec_tools = normalize_crew({
             "name": "Инструменты",
             "agents": [{"role": "A", "goal": "g", "backstory": "b", "tools": ["PDFSearchTool"]}],
             "tasks": [{"description": "d", "expected_output": "e"}],
-        })
+        }, rejected_tools)
+        spec_tools["tasks"][0]["agent"] = spec_tools["agents"][0]["id"]
         validation = validate_crew(spec_tools, {"read_local_file"})
-        check("removed tool is a validation error",
-              any("отключён" in item["message"] for item in validation["errors"]),
-              str(validation["errors"])[:160])
+        check("removed tool is dropped from a legacy project",
+              spec_tools["agents"][0]["tools"] == [] and validation["ok"],
+              str(spec_tools["agents"][0]["tools"]) + str(validation["errors"])[:120])
+        check("dropping a removed tool is reported",
+              any("отключён" in item["message"] for item in rejected_tools),
+              str(rejected_tools)[:160])
 
         # ------------------------------------------- P1-2: workspace is domain policy
         blocked = False

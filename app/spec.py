@@ -93,11 +93,51 @@ def normalize_agent(agent: dict, index: int, rejected: list[dict] | None = None)
     out["max_execution_time"] = max(0, _coerce_int(out.get("max_execution_time"), 0))
     for key in ("allow_delegation", "reasoning", "cache", "verbose", "confirm_changes"):
         out[key] = _coerce_bool(out.get(key), AGENT_DEFAULTS[key])
-    out["tools"] = [str(t) for t in (out.get("tools") or []) if str(t).strip()]
+    out["tools"] = _migrate_tools(out.get("tools") or [], index, rejected)
     for key in ("role", "goal", "backstory", "llm", "role_id"):
         out[key] = str(out.get(key) or "").strip()
     out["_index"] = index
     return out
+
+
+def _migrate_tools(tools: list, index: int, rejected: list[dict] | None) -> list[str]:
+    """Map removed third-party tools from legacy projects onto safe built-ins.
+
+    Projects saved before the sandbox hardening carry names like ``FileReadTool``.
+    Blocking those runs is worse than migrating: the built-in equivalents are
+    strictly safer and keep the project working.
+    """
+    from .tools import DROPPED_TOOL_NAMES, TOOL_ALIASES
+
+    result: list[str] = []
+    for raw in tools:
+        name = str(raw).strip()
+        if not name:
+            continue
+        if name in TOOL_ALIASES:
+            replacement = TOOL_ALIASES[name]
+            if replacement not in result:
+                result.append(replacement)
+            if rejected is not None:
+                rejected.append(
+                    {
+                        "field": f"agents[{index}].tools",
+                        "message": f"Инструмент «{name}» заменён на встроенный «{replacement}»",
+                    }
+                )
+            continue
+        if name in DROPPED_TOOL_NAMES:
+            if rejected is not None:
+                rejected.append(
+                    {
+                        "field": f"agents[{index}].tools",
+                        "message": f"Инструмент «{name}» отключён и убран из проекта",
+                    }
+                )
+            continue
+        if name not in result:
+            result.append(name)
+    return result
 
 
 def normalize_task(task: dict, index: int, rejected: list[dict] | None = None) -> dict:

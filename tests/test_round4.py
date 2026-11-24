@@ -113,8 +113,10 @@ def main() -> int:
         "tasks": [{"description": "d", "expected_output": "e"}],
     })
     legacy["tasks"][0]["agent"] = legacy["agents"][0]["id"]
-    validation = validate_crew(legacy, {"read_local_file"})
-    check("R-4 legacy removed tool is an error", not validation["ok"], str(validation["errors"])[:120])
+    validation = validate_crew(legacy, {"read_local_file", "write_local_file"})
+    check("R-4 legacy removed tool is migrated", legacy["agents"][0]["tools"] == ["write_local_file"],
+          str(legacy["agents"][0]["tools"]))
+    check("R-4 migrated project still validates", validation["ok"], str(validation["errors"])[:120])
     code = to_python(legacy, "", 60)
     check("R-4 code export has no removed tools",
           not any(name in code for name in ("FileWriterTool", "DirectoryReadTool", "PDFSearchTool")))

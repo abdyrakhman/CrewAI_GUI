@@ -85,6 +85,16 @@ REMOVED_TOOLS = {
     "MDXSearchTool": "RAG-инструменты читают файлы в обход песочницы",
 }
 
+# Legacy projects saved before the sandbox hardening: migrate instead of blocking.
+TOOL_ALIASES = {
+    "FileReadTool": "read_local_file",
+    "FileWriterTool": "write_local_file",
+    "DirectoryReadTool": "list_local_files",
+}
+
+# Tools without a safe built-in equivalent are dropped from old projects.
+DROPPED_TOOL_NAMES = frozenset(name for name in REMOVED_TOOLS if name not in TOOL_ALIASES)
+
 
 # Tools that build a vector index: they need an embeddings provider.
 RAG_TOOL_NAMES = frozenset(
