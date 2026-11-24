@@ -647,7 +647,8 @@ class RunManager:
                 "description": spec.get("description", ""),
                 "expected_output": spec.get("expected_output", ""),
                 "async_execution": bool(spec.get("async_execution")),
-                "human_input": bool(spec.get("human_input")),
+                # CrewAI 1.15 asks for human feedback only in the console: passing the
+            # flag to Task would block the run on ``input()`` and fail headlessly.
             }
             agent = agents.get(spec.get("agent") or "")
             if agent is not None and state.crew_spec.get("process") != "hierarchical":

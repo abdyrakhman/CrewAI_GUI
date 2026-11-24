@@ -94,6 +94,8 @@ app handles it for you.
 
 ![Live run](../screenshots/en/run.png)
 
+**Human confirmation.** The toggle is disabled: CrewAI asks for confirmation only in the console, so in the GUI the run used to hang on that flag. The flag stays in the project but is ignored at run time (the check panel shows a warning). The generated Python code keeps it and works in a terminal.
+
 ## Running
 
 The project is validated before a run (agents, tasks, assignees, limits, tools,

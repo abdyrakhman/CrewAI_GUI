@@ -647,9 +647,9 @@ function taskCard(task, index) {
               <input type="checkbox" data-field="tasks.${index}.async_execution" ${task.async_execution ? "checked" : ""}>
               <span class="track"></span> Асинхронно
             </label>
-            <label class="toggle">
-              <input type="checkbox" data-field="tasks.${index}.human_input" ${task.human_input ? "checked" : ""}>
-              <span class="track"></span> Запрос подтверждения у человека
+            <label class="toggle" title="CrewAI запрашивает подтверждение только в консоли — в графическом интерфейсе недоступно">
+              <input type="checkbox" data-field="tasks.${index}.human_input" ${task.human_input ? "checked" : ""} disabled>
+              <span class="track"></span> Запрос подтверждения у человека <span class="hint">— только в консоли</span>
             </label>
           </div>
         </div>

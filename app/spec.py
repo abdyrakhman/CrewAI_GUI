@@ -298,7 +298,10 @@ def validate_crew(
             elif task.get("agent") not in agent_ids:
                 err(f"{base}.agent", "Агент задачи не найден")
         if task.get("human_input"):
-            err(f"{base}.human_input", "Ввод из консоли не поддерживается: приложение не может ответить на вопрос агента")
+            warn(
+                f"{base}.human_input",
+                "Флаг игнорируется: CrewAI запрашивает подтверждение только в консоли, в графическом интерфейсе это не поддерживается",
+            )
         if task.get("output_format") == "file" and not task.get("output_file"):
             err(f"{base}.output_file", "Укажите имя файла результата")
         if task.get("output_format") == "file" and task.get("output_file"):

@@ -55,6 +55,8 @@ files tools — they stay in the workspace and ask for access.
 **A third-party network tool cannot be enabled.** It is off by default. Enable it by name in
 Settings → Third-party network tools; every call asks for permission.
 
+**I enabled human confirmation and the run hung.** The `human_input` flag is not supported in the GUI: CrewAI asks for confirmation through the console `input()`. Current versions ignore the flag and do not block the run; the check panel shows a warning.
+
 ## Workspace and files
 
 **`Folder outside allowed roots`.** Add the root in Settings → Folder access (one path per
