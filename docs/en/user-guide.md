@@ -99,6 +99,15 @@ app handles it for you.
 
 **Human confirmation.** The toggle is disabled: CrewAI asks for confirmation only in the console, so in the GUI the run used to hang on that flag. The flag stays in the project but is ignored at run time (the check panel shows a warning). The generated Python code keeps it and works in a terminal.
 
+## Signing in
+
+The interface is protected by a password. On first start the administrator is created as
+**admin / 123admin!** — change it in **Settings → Account**.
+
+- Sign in at `/login`; the session lives in an HttpOnly cookie for 7 days.
+- Register another account from the link on the login page.
+- Change the password in Settings → Account (current, new, at least 8 characters).
+
 ## Running
 
 The project is validated before a run (agents, tasks, assignees, limits, tools,

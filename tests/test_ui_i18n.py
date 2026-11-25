@@ -15,6 +15,7 @@ DATA = ROOT / ".setup" / f"ui-i18n-{uuid.uuid4().hex[:6]}"
 for sub in ("crews", "runs", "outputs", "uploads"):
     (DATA / sub).mkdir(parents=True, exist_ok=True)
 os.environ["CREWAI_STUDIO_DATA"] = str(DATA)
+os.environ["CREWAI_STUDIO_NO_AUTH"] = "1"
 os.environ["TMP"] = str(ROOT / ".setup" / "tmp")
 os.environ["TEMP"] = os.environ["TMP"]
 (ROOT / ".setup" / "tmp").mkdir(parents=True, exist_ok=True)

@@ -15,6 +15,7 @@ sys.path.insert(0, str(ROOT / "tests"))
 DATA = ROOT / ".setup" / f"uiws-{uuid.uuid4().hex[:8]}"
 DATA.mkdir(parents=True, exist_ok=True)
 os.environ["CREWAI_STUDIO_DATA"] = str(DATA)
+os.environ["CREWAI_STUDIO_NO_AUTH"] = "1"
 TMP = ROOT / ".setup" / "tmp"
 TMP.mkdir(parents=True, exist_ok=True)
 os.environ["TMP"] = str(TMP)

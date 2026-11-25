@@ -73,3 +73,7 @@
    `server.RequestHandlerClass.session_token`.
 3. Для сценария с моделью — `MockLLMServer` и настройки `openai_base_url` на него.
 4. Назовите файл `test_<тема>.py` и добавьте строку в README и в этот документ.
+
+
+`test_auth.py` проверяет вход, регистрацию, смену пароля и закрытость API. Остальные наборы выставляют
+`CREWAI_STUDIO_NO_AUTH=1`, чтобы не логиниться в каждом тесте.

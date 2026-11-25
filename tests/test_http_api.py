@@ -17,6 +17,7 @@ sys.path.insert(0, str(ROOT / "tests"))
 STUDIO_DATA = ROOT / ".setup" / f"http-{uuid.uuid4().hex[:8]}"
 STUDIO_DATA.mkdir(parents=True, exist_ok=True)
 os.environ["CREWAI_STUDIO_DATA"] = str(STUDIO_DATA)
+os.environ["CREWAI_STUDIO_NO_AUTH"] = "1"
 
 from mock_llm import MockLLMServer  # noqa: E402
 

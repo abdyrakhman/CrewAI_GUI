@@ -16,6 +16,7 @@ DATA = ROOT / ".setup" / f"r4-{uuid.uuid4().hex[:8]}"
 for sub in ("crews", "runs", "outputs", "uploads", "workspaces"):
     (DATA / sub).mkdir(parents=True, exist_ok=True)
 os.environ["CREWAI_STUDIO_DATA"] = str(DATA)
+os.environ["CREWAI_STUDIO_NO_AUTH"] = "1"
 
 from app import runner, tools, workspace  # noqa: E402
 from app.runner import RunManager, RunState  # noqa: E402

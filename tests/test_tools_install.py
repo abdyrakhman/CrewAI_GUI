@@ -18,6 +18,7 @@ sys.path.insert(0, str(ROOT / "tests"))
 DATA = ROOT / ".setup" / f"inst-{uuid.uuid4().hex[:8]}"
 DATA.mkdir(parents=True, exist_ok=True)
 os.environ["CREWAI_STUDIO_DATA"] = str(DATA)
+os.environ["CREWAI_STUDIO_NO_AUTH"] = "1"
 
 from app import tools  # noqa: E402
 from app.server import create_server  # noqa: E402
