@@ -534,6 +534,13 @@ class StudioHandler(BaseHTTPRequestHandler):
             return True
 
         match = re.fullmatch(r"/api/templates/([\w-]+)", path)
+        if match and method == "GET":
+            entry = templates.get_custom_template(match.group(1))
+            if entry is None:
+                self._error(404, "Шаблон не найден")
+                return True
+            self._send_json(200, {"template": entry})
+            return True
         if match and method == "DELETE":
             self._send_json(200, {"ok": templates.delete_custom_template(match.group(1))})
             return True
@@ -544,7 +551,7 @@ class StudioHandler(BaseHTTPRequestHandler):
                 self._error(400, "Укажите название шаблона")
                 return True
             entry = templates.update_custom_template(
-                match.group(1), title, payload.get("description")
+                match.group(1), title, payload.get("description"), payload.get("crew")
             )
             if entry is None:
                 self._error(404, "Шаблон не найден")

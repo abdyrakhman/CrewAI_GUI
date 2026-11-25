@@ -93,6 +93,25 @@ def main() -> int:
         crew = payload.get("crew", {})
         check("template-based project created", status == 201, str(payload)[:150])
 
+        # a template can be created empty and filled with agents and tasks
+        status, payload = request("/api/templates", "POST", {"title": "Пустой", "crew": {"name": "Пустой", "agents": [], "tasks": []}})
+        empty_key = payload["template"]["key"]
+        crew_spec = {
+            "name": "Шаблон с командой",
+            "agents": [{"role": "Разработчик", "goal": "Сделать", "backstory": "Опытный"}],
+            "tasks": [{"description": "Реализуй", "expected_output": "Код"}],
+        }
+        crew_spec["tasks"][0]["agent"] = crew_spec["agents"][0]["id"] if crew_spec["agents"][0].get("id") else ""
+        status, payload = request(f"/api/templates/{empty_key}", "PUT", {"title": "Шаблон с командой", "crew": crew_spec})
+        check("template can be edited with a crew", status == 200 and "агент" in payload["template"]["subtitle"], str(payload)[:160])
+        status, payload = request(f"/api/templates/{empty_key}")
+        check("template returns its crew", status == 200 and len(payload["template"]["crew"]["agents"]) == 1, str(payload)[:160])
+        status, payload = request("/api/crews", "POST", {"template": empty_key})
+        created = payload["crew"]
+        check("project from edited template has agents and tasks",
+              len(created["agents"]) == 1 and len(created["tasks"]) == 1, str(created)[:160])
+        request(f"/api/templates/{empty_key}", "DELETE")
+
         status, payload = request("/api/templates")
         builtin_count = len(payload.get("templates", []))
         check("builtin templates listed", status == 200 and builtin_count >= 4)

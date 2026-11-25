@@ -420,7 +420,23 @@ def delete_custom_template(key: str) -> bool:
     return True
 
 
-def update_custom_template(key: str, title: str, description: str | None = None) -> dict | None:
+def get_custom_template(key: str) -> dict | None:
+    """Full custom template including its crew specification."""
+    try:
+        path = _custom_path(key)
+    except ValueError:
+        return None
+    if not path.exists():
+        return None
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def update_custom_template(
+    key: str, title: str, description: str | None = None, crew: dict | None = None
+) -> dict | None:
     try:
         path = _custom_path(key)
     except ValueError:
@@ -435,6 +451,12 @@ def update_custom_template(key: str, title: str, description: str | None = None)
         entry["title"] = title.strip()[:120]
     if description is not None:
         entry["description"] = description.strip()[:400]
+    if isinstance(crew, dict):
+        spec = normalize_crew(deepcopy(crew))
+        for field in ("id", "created_at", "updated_at"):
+            spec.pop(field, None)
+        spec["workspace"] = ""
+        entry["crew"] = spec
     entry["subtitle"] = _subtitle(normalize_crew(entry.get("crew") or {}))
     path.write_text(json.dumps(entry, ensure_ascii=False, indent=2), encoding="utf-8")
     return entry
