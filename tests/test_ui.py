@@ -20,6 +20,7 @@ sys.path.insert(0, str(ROOT / "tests"))
 DATA = ROOT / ".setup" / f"ui-{uuid.uuid4().hex[:8]}"
 DATA.mkdir(parents=True, exist_ok=True)
 os.environ["CREWAI_STUDIO_DATA"] = str(DATA)
+os.environ["CREWAI_STUDIO_NO_AUTH"] = "1"
 os.environ["MOCK_DELAY"] = "0.05"
 # Chrome/Playwright need scratch space the sandboxed TEMP does not provide.
 TMP = ROOT / ".setup" / "tmp"

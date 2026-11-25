@@ -116,6 +116,10 @@ async function api(path, { method = "GET", body = null } = {}) {
   } catch {
     data = { error: text || `HTTP ${response.status}` };
   }
+  if (response.status === 401 && (data.auth || path.startsWith("/api/"))) {
+    window.location.replace("/login");
+    throw new Error(data.error || "Требуется вход");
+  }
   if (!response.ok) {
     const message =
       response.status === 403
@@ -322,6 +326,7 @@ const state = {
   roles: [],
   runs: [],
   settings: null,
+  user: null,
   files: null,
   placeholders: [],
   validation: null,
@@ -1032,6 +1037,12 @@ async function init() {
     state.runs = runs.runs || [];
     state.settings = settings.settings;
     state.roles = roles.roles || [];
+    try {
+      const me = await api("/api/auth/me");
+      state.user = me.user || null;
+    } catch (error) {
+      state.user = null;
+    }
     StudioI18n.setLang(state.settings?.ui_language === "en" ? "en" : "ru");
     document.documentElement.dataset.theme = state.settings?.theme === "light" ? "light" : "dark";
     renderSidebar();
@@ -1632,6 +1643,24 @@ function renderSettings() {
     <div class="view-inner">
       <div class="settings-grid">
         <div class="stack">
+          <div class="card">
+            <div class="card-head"><h2>Аккаунт</h2></div>
+            <div class="card-body">
+              <div class="row" style="gap:10px;align-items:center">
+                <div class="grow">
+                  <strong>${esc(state.user || "—")}</strong>
+                  <p class="hint-text" style="margin:2px 0 0">Вход в интерфейс защищён паролем</p>
+                </div>
+                <button class="btn btn-ghost btn-sm" data-action="logout">${icon("back", 14)} Выйти</button>
+              </div>
+              <div class="row" style="gap:8px;margin-top:12px">
+                <input type="password" id="password-current" placeholder="Текущий пароль" autocomplete="current-password" style="flex:1">
+                <input type="password" id="password-new" placeholder="Новый пароль (от 8 символов)" autocomplete="new-password" style="flex:1">
+                <button class="btn btn-sm" data-action="change-password">Сменить</button>
+              </div>
+            </div>
+          </div>
+
           <div class="card">
             <div class="card-head"><h2>Интерфейс</h2></div>
             <div class="card-body">
@@ -3188,6 +3217,28 @@ function bindGlobalEvents() {
       case "edit-template":
         await openTemplateEditor(trigger.dataset.key);
         break;
+      case "change-password": {
+        const current = $("#password-current")?.value || "";
+        const next = $("#password-new")?.value || "";
+        try {
+          await api("/api/auth/password", { method: "POST", body: { current, new: next } });
+          toast("Пароль изменён", "ok");
+          if ($("#password-current")) $("#password-current").value = "";
+          if ($("#password-new")) $("#password-new").value = "";
+        } catch (error) {
+          toast(error.message, "err");
+        }
+        break;
+      }
+      case "logout": {
+        try {
+          await api("/api/auth/logout", { method: "POST" });
+        } catch (error) {
+          /* ignore and go to the login page anyway */
+        }
+        window.location.replace("/login");
+        break;
+      }
       case "save-template-crew":
         await saveTemplateCrew();
         break;

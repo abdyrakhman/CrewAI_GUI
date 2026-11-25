@@ -20,6 +20,7 @@ sys.path.insert(0, str(ROOT / "tests"))
 DATA = ROOT / ".setup" / f"wsapi-{uuid.uuid4().hex[:8]}"
 DATA.mkdir(parents=True, exist_ok=True)
 os.environ["CREWAI_STUDIO_DATA"] = str(DATA)
+os.environ["CREWAI_STUDIO_NO_AUTH"] = "1"
 os.environ["MOCK_DELAY"] = "0.001"
 
 from mock_llm import MockLLMServer  # noqa: E402

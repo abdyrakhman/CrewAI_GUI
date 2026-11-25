@@ -20,7 +20,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
-from . import config, observability, roles, security, templates, tools as tool_registry, workspace
+from . import auth, config, observability, roles, security, templates, tools as tool_registry, workspace
 from .runner import BusyError, RunManager, crewai_status, stream_lines
 from .spec import inputs_payload, normalize_crew, resolve_llm, to_python, validate_crew
 from .store import Store, as_jsonable
@@ -89,7 +89,7 @@ class StudioHandler(BaseHTTPRequestHandler):
     def _deny(self, status: int, message: str) -> None:
         self._send_json(status, {"error": message})
 
-    def _check_perimeter(self, method: str) -> bool:
+    def _check_perimeter(self, method: str, path: str = "") -> bool:
         """Host/Origin/token/Content-Type checks: the browser is the attack transport."""
         if self.headers.get("Transfer-Encoding"):
             self._deny(411, "Chunked-запросы не поддерживаются: укажите Content-Length")
@@ -104,7 +104,7 @@ class StudioHandler(BaseHTTPRequestHandler):
             if netloc not in self.allowed_hosts:
                 self._deny(403, "Неверный Origin")
                 return False
-        if method in {"POST", "PUT", "PATCH", "DELETE"}:
+        if method in {"POST", "PUT", "PATCH", "DELETE"} and not path.startswith("/api/auth/"):
             token = self.headers.get("X-Studio-Token") or ""
             if not self.session_token or not hmac.compare_digest(token, self.session_token):
                 self._deny(403, "Нет или неверный токен сессии")
@@ -137,6 +137,9 @@ class StudioHandler(BaseHTTPRequestHandler):
         request_id = getattr(self, "request_id", "")
         if request_id:
             self.send_header("X-Request-Id", request_id)
+        cookie = getattr(self, "_session_cookie", "")
+        if cookie:
+            self.send_header("Set-Cookie", cookie)
         self.end_headers()
         try:
             self.wfile.write(body)
@@ -222,10 +225,32 @@ class StudioHandler(BaseHTTPRequestHandler):
         # Route on the raw path: decoding first would turn %2f into a real separator.
         path = parsed.path
         query = urllib.parse.parse_qs(parsed.query)
-        if not self._check_perimeter(method):
+        if not self._check_perimeter(method, path):
             observability.log_request(method, path, 403, self.request_id, started)
             return
         try:
+            if method == "GET" and path == "/login":
+                self._serve_web("login.html")
+                return
+            if method == "GET" and path in {"/login.js", "/login.css"}:
+                self._serve_web(path.lstrip("/"))
+                return
+            if method == "GET" and path.startswith("/static/"):
+                self._serve_web(urllib.parse.unquote(path[len("/static/"):]))
+                return
+            if path.startswith("/api/auth/"):
+                self._handle_auth(method, path)
+                return
+
+            user = self._session_user()
+            self.current_user = user or ""
+            if not user:
+                if path.startswith("/api/"):
+                    self._error(401, "Требуется вход", auth=True)
+                else:
+                    self._redirect("/login")
+                return
+
             if method == "GET" and not path.startswith("/api/"):
                 relative = path.lstrip("/")
                 if relative.startswith("static/"):
@@ -247,6 +272,95 @@ class StudioHandler(BaseHTTPRequestHandler):
         finally:
             if method in {"POST", "PUT", "PATCH", "DELETE"}:
                 observability.log_request(method, path, getattr(self, "_last_status", 0), self.request_id, started)
+
+    def _session_user(self) -> str | None:
+        if os.environ.get("CREWAI_STUDIO_NO_AUTH") == "1":
+            return "local"
+        token = auth.cookie_value(self.headers.get("Cookie", ""))
+        return auth.session_user(token)
+
+    def _redirect(self, location: str) -> None:
+        self.send_response(302)
+        self.send_header("Location", location)
+        self.send_header("Content-Length", "0")
+        for header, value in security.SECURITY_HEADERS.items():
+            self.send_header(header, value)
+        self.end_headers()
+
+    def _set_session_cookie(self, token: str) -> None:
+        self._session_cookie = (
+            f"{auth.COOKIE_NAME}={token}; Path=/; HttpOnly; SameSite=Lax; Max-Age={auth.SESSION_TTL}"
+        )
+
+    def _handle_auth(self, method: str, path: str) -> bool:
+        store = self.store
+        if path == "/api/auth/state" and method == "GET":
+            user = self._session_user()
+            self._send_json(200, {"has_users": auth.has_users(), "user": user})
+            return True
+
+        if path == "/api/auth/login" and method == "POST":
+            payload = self._read_json()
+            username = str(payload.get("username") or "").strip()
+            password = str(payload.get("password") or "")
+            record = auth.get_user(username)
+            if not record or not auth.verify_password(password, record):
+                self._error(401, "Неверный логин или пароль")
+                return True
+            token = auth.create_session(username)
+            self._set_session_cookie(token)
+            self._send_json(200, {"user": username, "role": record.get("role", "user")})
+            return True
+
+        if path == "/api/auth/register" and method == "POST":
+            payload = self._read_json()
+            username = str(payload.get("username") or "").strip()
+            password = str(payload.get("password") or "")
+            try:
+                role = "admin" if not auth.has_users() else "user"
+                created = auth.create_user(username, password, role=role)
+            except ValueError as exc:
+                self._error(400, str(exc))
+                return True
+            token = auth.create_session(created["username"])
+            self._set_session_cookie(token)
+            self._send_json(201, {"user": created["username"], "role": created["role"]})
+            return True
+
+        if path == "/api/auth/logout" and method == "POST":
+            token = auth.cookie_value(self.headers.get("Cookie", ""))
+            auth.drop_session(token)
+            self._session_cookie = f"{auth.COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0"
+            self._send_json(200, {"ok": True})
+            return True
+
+        if path == "/api/auth/password" and method == "POST":
+            token = auth.cookie_value(self.headers.get("Cookie", ""))
+            username = auth.session_user(token)
+            if not username:
+                self._error(401, "Требуется вход", auth=True)
+                return True
+            payload = self._read_json()
+            try:
+                auth.change_password(
+                    username, str(payload.get("current") or ""), str(payload.get("new") or "")
+                )
+            except ValueError as exc:
+                self._error(400, str(exc))
+                return True
+            self._send_json(200, {"ok": True})
+            return True
+
+        if path == "/api/auth/me" and method == "GET":
+            user = self._session_user()
+            if not user:
+                self._error(401, "Требуется вход", auth=True)
+                return True
+            self._send_json(200, {"user": user})
+            return True
+
+        self._error(404, "Не найдено")
+        return True
 
     def _handle_api(self, method: str, path: str, query: dict[str, list[str]]) -> bool:
         store, manager = self.store, self.manager
@@ -823,6 +937,9 @@ class StudioServer(ThreadingHTTPServer):
 
 
 def create_server(host: str, port: int) -> StudioServer:
+    created_admin = auth.ensure_default_admin()
+    if created_admin:
+        print(f"  Создан администратор «{created_admin}». Смените пароль в настройках безопасности.")
     store = Store()
     manager = RunManager(store)
 
