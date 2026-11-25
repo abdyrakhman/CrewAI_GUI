@@ -327,6 +327,7 @@ const state = {
   validation: null,
   workspaceInfo: null,
   run: null,
+  templateEdit: null,
   es: null,
   timer: null,
 };
@@ -427,10 +428,13 @@ function renderTopbar() {
         </div>
       </div>
       <div class="topbar-actions">
-        <button class="btn btn-ghost btn-sm" data-action="save-as-template">${icon("spark")} В шаблон</button>
-        <button class="btn btn-ghost btn-sm" data-action="show-code">${icon("code")} Код</button>
-        <button class="btn btn-ghost btn-sm" data-action="duplicate-crew">${icon("copy")} Дублировать</button>
-        <button class="btn btn-primary" data-action="run-crew">${icon("play")} Запустить</button>
+        ${state.templateEdit
+          ? `<button class="btn btn-ghost btn-sm" data-action="cancel-template-edit">${icon("back")} Отмена</button>
+             <button class="btn btn-primary" data-action="save-template-crew">${icon("save")} Сохранить шаблон</button>`
+          : `<button class="btn btn-ghost btn-sm" data-action="save-as-template">${icon("spark")} В шаблон</button>
+             <button class="btn btn-ghost btn-sm" data-action="show-code">${icon("code")} Код</button>
+             <button class="btn btn-ghost btn-sm" data-action="duplicate-crew">${icon("copy")} Дублировать</button>
+             <button class="btn btn-primary" data-action="run-crew">${icon("play")} Запустить</button>`}
       </div>`;
     updateSaveState();
     return;
@@ -476,7 +480,7 @@ function renderTopbar() {
       ${state.view === "history" ? `<button class="btn btn-ghost btn-sm" data-action="refresh-history">${icon("refresh")} Обновить</button>` : ""}
       ${state.view === "files" ? `<button class="btn btn-ghost btn-sm" data-action="refresh-files">${icon("refresh")} Обновить</button>` : ""}
       ${state.view === "roles" ? `<button class="btn btn-ghost btn-sm" data-action="reset-roles">${icon("refresh")} Сбросить к стандартным</button><button class="btn btn-primary" data-action="new-role">${icon("plus")} Новая роль</button>` : ""}
-      ${state.view === "templates" ? `<button class="btn btn-ghost btn-sm" data-action="goto" data-view="builder">${icon("back")} К проектам</button><button class="btn btn-primary" data-action="new-template">${icon("plus")} Новый шаблон</button>` : ""}
+      ${state.view === "templates" ? `<button class="btn btn-ghost btn-sm" data-action="goto" data-view="builder">${icon("back")} К проектам</button><button class="btn btn-ghost btn-sm" data-action="empty-template">${icon("plus")} Пустой шаблон</button><button class="btn btn-primary" data-action="new-template">${icon("plus")} Новый шаблон</button>` : ""}
     </div>`;
 }
 
@@ -661,6 +665,7 @@ function taskCard(task, index) {
 function renderBuilder() {
   const crew = state.crew;
   if (!crew) return renderEmptyView();
+  const isTemplate = Boolean(state.templateEdit);
   const knownPlaceholders = state.placeholders || [];
   const declared = new Set((crew.inputs || []).map((item) => item.key));
   const missing = knownPlaceholders.filter((name) => !declared.has(name));
@@ -671,9 +676,9 @@ function renderBuilder() {
       <div class="stack">
         <div class="card">
           <div class="card-head">
-            <h2>Проект</h2>
+            <h2>${isTemplate ? "Шаблон" : "Проект"}</h2>
             <span class="spacer"></span>
-            <button class="btn btn-ghost btn-sm" data-action="delete-crew">${icon("trash", 14)} Удалить</button>
+            ${isTemplate ? "" : `<button class="btn btn-ghost btn-sm" data-action="delete-crew">${icon("trash", 14)} Удалить</button>`}
           </div>
           <div class="card-body">
             <div class="field">
@@ -684,7 +689,7 @@ function renderBuilder() {
               <label>Описание</label>
               <input type="text" data-field="description" value="${esc(crew.description)}" placeholder="Что делает эта команда">
             </div>
-            <div class="field">
+            ${isTemplate ? `<p class="hint-text" style="margin:0">Рабочая область выбирается в проекте — в шаблон она не входит.</p>` : `            <div class="field">
               <label>Рабочая область <span class="hint">папка, в которой агенты читают и пишут файлы</span></label>
               <div class="row" style="gap:6px">
                 <input type="text" id="workspace-input" value="${esc(crew.workspace)}" placeholder="${esc(state.workspaceInfo?.path || "по умолчанию — data/workspaces/<проект>")}" spellcheck="false">
@@ -697,7 +702,7 @@ function renderBuilder() {
                 ${state.workspaceInfo?.exists && !state.workspaceInfo?.writable ? '<span class="chip err">нет прав на запись</span>' : ""}
                 ${state.workspaceInfo?.is_default ? '<span class="chip">по умолчанию</span>' : ""}
               </div>
-            </div>
+            </div>`}
           </div>
         </div>
 
@@ -785,8 +790,11 @@ function renderBuilder() {
 
         <div class="card">
           <div class="card-body">
-            <button class="btn btn-primary btn-block" data-action="run-crew" style="padding:11px">${icon("play")} Запустить команду</button>
-            <p class="hint-text" style="margin:9px 0 0;text-align:center">${icon("info", 12)} Ctrl + Enter</p>
+            ${isTemplate
+              ? `<button class="btn btn-primary btn-block" data-action="save-template-crew" style="padding:11px">${icon("save", 15)} Сохранить шаблон</button>
+                 <p class="hint-text" style="margin:9px 0 0;text-align:center">Агенты и задачи сохранятся в шаблоне</p>`
+              : `<button class="btn btn-primary btn-block" data-action="run-crew" style="padding:11px">${icon("play", 15)} Запустить команду</button>
+                 <p class="hint-text" style="margin:9px 0 0;text-align:center">${icon("info", 12)} Ctrl + Enter</p>`}
           </div>
         </div>
       </div>
@@ -1520,8 +1528,9 @@ async function loadPicker(path) {
         <span class="hint-text">${data.readable
           ? data.writable
             ? "чтение и запись доступны"
-            : "только чтение — выбрать эту папку нельзя"
+            : "только для чтения: Windows не разрешает запись. Выберите папку, куда можно писать (например, внутри E:\\CrewAI), или вернитесь к папке по умолчанию."
           : "нет доступа к папке"}</span>
+        ${data.writable ? "" : `<button class="btn btn-sm" data-action="fs-default">Папка по умолчанию</button>`}
       </div>`;
     const chooseButton = $('[data-action="fs-choose"]');
     if (chooseButton) {
@@ -2314,8 +2323,81 @@ function closeModal() {
 /* ------------------------------------------------------------------- save */
 let saveGeneration = 0;
 
+async function openTemplateEditor(key) {
+  try {
+    const data = await api(`/api/templates/${key}`);
+    const entry = data.template || {};
+    const crew = entry.crew || {};
+    state.templateEdit = { key, title: entry.title || "", description: entry.description || "" };
+    state.crew = {
+      ...crew,
+      id: "__template__",
+      name: entry.title || crew.name || "Шаблон",
+      workspace: "",
+    };
+    state.workspaceInfo = null;
+    state.placeholders = [];
+    state.validation = null;
+    state.dirty = false;
+    state.view = "builder";
+    setHash("");
+    render();
+    renderTopbar();
+    toast("Редактирование шаблона: добавьте агентов и задачи", "ok");
+  } catch (error) {
+    toast(error.message, "err");
+  }
+}
+
+async function saveTemplateCrew() {
+  const edit = state.templateEdit;
+  if (!edit || !state.crew) return;
+  const spec = JSON.parse(JSON.stringify(state.crew));
+  delete spec.id;
+  delete spec.created_at;
+  delete spec.updated_at;
+  spec.workspace = "";
+  try {
+    await api(`/api/templates/${edit.key}`, {
+      method: "PUT",
+      body: {
+        title: state.crew.name || edit.title || "Шаблон",
+        description: state.crew.description || "",
+        crew: spec,
+      },
+    });
+    state.dirty = false;
+    updateSaveState();
+    await refreshTemplates();
+    toast("Шаблон сохранён", "ok");
+  } catch (error) {
+    toast(error.message, "err");
+  }
+}
+
+function cancelTemplateEdit() {
+  state.templateEdit = null;
+  state.crew = null;
+  state.dirty = false;
+  go("templates");
+}
+
+async function createEmptyTemplate() {
+  try {
+    const data = await api("/api/templates", {
+      method: "POST",
+      body: { title: "Новый шаблон", crew: { name: "Новый шаблон", agents: [], tasks: [] } },
+    });
+    await refreshTemplates();
+    await openTemplateEditor(data.template.key);
+  } catch (error) {
+    toast(error.message, "err");
+  }
+}
+
 async function saveCrew(force = false) {
   if (!state.crew) return;
+  if (state.templateEdit) return; // templates are saved explicitly
   if (!state.dirty && !force) return;
   const generation = saveGeneration;
   state.saving = true;
@@ -3072,6 +3154,10 @@ function bindGlobalEvents() {
       case "fs-mkdir":
         await makePickerDir();
         break;
+      case "fs-default":
+        closeModal();
+        await setWorkspace("");
+        break;
       case "fs-choose":
         if (!pickerAccess.writable) {
           toast("В эту папку нельзя записывать: выберите другую или разрешите доступ", "err");
@@ -3097,7 +3183,16 @@ function bindGlobalEvents() {
         await saveNewTemplate();
         break;
       case "edit-template":
-        openEditTemplateDialog(trigger.dataset.key, trigger.dataset.title, trigger.dataset.description);
+        await openTemplateEditor(trigger.dataset.key);
+        break;
+      case "save-template-crew":
+        await saveTemplateCrew();
+        break;
+      case "cancel-template-edit":
+        cancelTemplateEdit();
+        break;
+      case "empty-template":
+        await createEmptyTemplate();
         break;
       case "confirm-edit-template":
         await saveTemplateEdits(trigger.dataset.key);

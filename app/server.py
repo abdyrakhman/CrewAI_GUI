@@ -462,10 +462,10 @@ class StudioHandler(BaseHTTPRequestHandler):
                     return True
                 readable, writable_now = workspace.check_access(target)
                 if not readable:
-                    self._error(400, "Нет прав на чтение этой папки — агенты не смогут её открыть")
+                    self._error(400, f"Нет прав на чтение папки {target} — агенты не смогут её открыть")
                     return True
                 if not writable_now:
-                    self._error(400, "Нет прав на запись в эту папку — агенты не смогут сохранять файлы")
+                    self._error(400, f"Нет прав на запись в {target} — Windows не разрешает создавать файлы. Выберите другую папку, например внутри E:\\CrewAI, или папку по умолчанию.")
                     return True
                 saved = store.save_crew(candidate)
                 self._send_json(200, {"crew": saved, "workspace": workspace.describe(saved)})
@@ -534,6 +534,13 @@ class StudioHandler(BaseHTTPRequestHandler):
             return True
 
         match = re.fullmatch(r"/api/templates/([\w-]+)", path)
+        if match and method == "GET":
+            entry = templates.get_custom_template(match.group(1))
+            if entry is None:
+                self._error(404, "Шаблон не найден")
+                return True
+            self._send_json(200, {"template": entry})
+            return True
         if match and method == "DELETE":
             self._send_json(200, {"ok": templates.delete_custom_template(match.group(1))})
             return True
@@ -544,7 +551,7 @@ class StudioHandler(BaseHTTPRequestHandler):
                 self._error(400, "Укажите название шаблона")
                 return True
             entry = templates.update_custom_template(
-                match.group(1), title, payload.get("description")
+                match.group(1), title, payload.get("description"), payload.get("crew")
             )
             if entry is None:
                 self._error(404, "Шаблон не найден")

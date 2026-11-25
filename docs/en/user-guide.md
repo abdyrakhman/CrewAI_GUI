@@ -61,7 +61,8 @@ Reset restores the built-in set (your roles are deleted after a confirmation).
 
 ## Templates
 
-A template is a saved project skeleton: agents, tasks, model, settings. The workspace is
+A template is a saved project skeleton: agents, tasks, model, settings. Use the pencil icon to open a
+template in the builder and add agents and tasks, or press **Blank template** to start from scratch. The workspace is
 not part of a template — it belongs to the project. Save with **Save as template**, apply
 from the Templates section, rename or delete on the card.
 
