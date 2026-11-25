@@ -1077,6 +1077,7 @@ async function refreshCrews() {
 async function openCrew(crewId) {
   // A running crew keeps streaming in the background; the indicator brings it back.
   const data = await api(`/api/crews/${crewId}`);
+  state.templateEdit = null;
   state.crew = data.crew;
   state.validation = data.validation;
   state.workspaceInfo = data.workspace || null;
@@ -1104,6 +1105,7 @@ function render() {
 
 function go(view) {
   state.view = view;
+  if (view !== "builder") state.templateEdit = null;
   if (view === "history") refreshHistory();
   if (view === "files") refreshFiles();
   setHash(`view=${view}`);
@@ -2835,6 +2837,7 @@ async function useTemplate(key) {
 
 async function openRunDetail(runId) {
   try {
+    state.templateEdit = null;
     const data = await api(`/api/runs/${runId}`);
     const stored = data.run;
     const resultTasks = stored.result?.tasks || [];
