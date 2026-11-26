@@ -1,8 +1,11 @@
 # Ядро — сам CrewAI (тянет провайдеров моделей, память, телеметрию).
-crewai>=1.15,<2
+# Версия закреплена: обновление CrewAI меняет API (см. docs/crewai-api-notes.md).
+crewai==1.15.45
 
-# Для браузерных тестов (tests/test_ui.py): .venv\Scripts\python.exe -m pip install playwright
+# Для браузерных тестов (tests/test_ui.py):
+#   .venv\Scripts\python.exe -m pip install playwright
+
 # Необязательно: расширенные инструменты (веб-поиск Serper, RAG по PDF/CSV и т.д.).
 # Ставится отдельно, потому что тянет тяжёлые зависимости (chromadb, эмбеддинги):
-#   .venv\Scripts\python.exe -m pip install "crewai-tools>=1.15,<2"
-# crewai-tools>=1.15,<2
+#   .venv\Scripts\python.exe -m pip install "crewai-tools==1.15.45"
+# crewai-tools==1.15.45

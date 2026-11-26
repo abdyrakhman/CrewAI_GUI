@@ -47,8 +47,9 @@ Invoke-RestMethod 'http://127.0.0.1:7860/api/crews' -Headers $h
 | POST | `/api/auth/login` | `{username, password}` | `{user, role, must_change}` + `Set-Cookie` |
 | POST | `/api/auth/register` | `{username, password}` | `201 {user, role}` + `Set-Cookie` |
 | POST | `/api/auth/logout` | — | `{ok}` и сброс cookie |
+| POST | `/api/auth/logout-all` | — | `{ok, dropped_sessions}` — завершает все сессии пользователя |
 | GET | `/api/auth/me` | — | `{user}` или 401 |
-| POST | `/api/auth/password` | `{current, new}` | `{ok}`; нужна сессия |
+| POST | `/api/auth/password` | `{current, new}` | `{ok, dropped_sessions}`; нужна сессия, остальные сессии закрываются |
 
 Сессия — cookie `studio_session` (HttpOnly, SameSite=Lax); срок задаётся настройкой `session_ttl_hours`.
 Изменяющие запросы дополнительно требуют `X-Studio-Token` (он в мета-теге страницы), кроме `/api/auth/*`.

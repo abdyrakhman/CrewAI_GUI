@@ -108,7 +108,8 @@ The interface is protected by a password. On first start the administrator is cr
 - The first sign-in with the default password opens a mandatory password change screen; until it is done
   the rest of the app and the API stay closed.
 - Session lifetime is configurable in Settings → Account (1 hour — 7 days).
-- Register another account from the link on the login page.
+- **Sign out** and **Sign out everywhere** live in Settings → Account.
+- After 5 failed sign-ins the login is blocked for 10 minutes.
 - Change the password in Settings → Account (current, new, at least 8 characters).
 - Details: [auth.md](auth.md) — sessions, roles, access recovery, and [logging.md](logging.md) — logs.
 - Details: [auth.md](auth.md) — sessions, roles, access recovery.

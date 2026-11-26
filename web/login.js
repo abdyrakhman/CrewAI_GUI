@@ -78,9 +78,10 @@
     }
   }
 
-  document.getElementById("login-submit").addEventListener("click", submit);
-  document.getElementById("register-submit").addEventListener("click", submit);
-  document.getElementById("auth-form").addEventListener("submit", (event) => event.preventDefault());
+  document.getElementById("auth-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    submit();
+  });
   document.getElementById("to-register").addEventListener("click", () => setMode("register"));
   document.getElementById("to-login").addEventListener("click", () => setMode("login"));
 

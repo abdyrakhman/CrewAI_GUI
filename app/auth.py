@@ -202,6 +202,20 @@ def session_user(token: str) -> str | None:
         return entry["username"]
 
 
+def drop_user_sessions(username: str, keep_token: str = "") -> int:
+    """Log the user out everywhere except (optionally) the current token."""
+    keep = _token_hash(keep_token) if keep_token else ""
+    removed = 0
+    with _lock:
+        sessions = _load_sessions()
+        for key in list(sessions):
+            if sessions[key].get("username") == username and key != keep:
+                sessions.pop(key, None)
+                removed += 1
+        _save_sessions(sessions)
+    return removed
+
+
 def drop_session(token: str) -> None:
     if not token:
         return

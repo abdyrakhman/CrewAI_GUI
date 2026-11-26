@@ -22,7 +22,8 @@ machine should not see your projects or change your settings.
 
 - **Settings → Account**: current password, new password, **Change**.
 - The same `/change-password.html` screen is used when the app requires it.
-- The current session stays active; other sessions are not terminated.
+- After a password change **every other session is terminated**; the current one stays active.
+- **Sign out everywhere** in Settings → Account ends all sessions of the user.
 
 ## Session lifetime
 
@@ -30,6 +31,11 @@ machine should not see your projects or change your settings.
 - The value (`session_ttl_hours`) becomes the cookie `Max-Age` and the session expiry in `data/sessions.json`.
 - It applies to new sign-ins; the current session is not cut. Sign out and in to apply it immediately.
 - The server accepts 1–720 hours and ignores anything else.
+
+## Brute-force protection
+
+- After 5 failed sign-ins from one address, sign-in is blocked for 10 minutes (`429` with `Retry-After`).
+- A successful sign-in resets the counter.
 
 ## Registration and roles
 
@@ -56,7 +62,7 @@ This resets **all** accounts. There is no other recovery: passwords are stored i
 ## API
 
 Public (no session): `GET /api/auth/state`, `POST /api/auth/login`, `POST /api/auth/register`,
-`POST /api/auth/logout`, `GET /api/auth/me`, `POST /api/auth/password`.
+`POST /api/auth/logout`, `POST /api/auth/logout-all`, `GET /api/auth/me`, `POST /api/auth/password`.
 
 Every other `/api/*` call needs a session: otherwise `401 {"auth": true}`, and while the password change
 is pending `403 {"password_change_required": true}`. See [api.md](api.md).
