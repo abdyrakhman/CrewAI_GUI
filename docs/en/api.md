@@ -35,6 +35,25 @@ TOKEN=$(curl -s http://127.0.0.1:7860/ | grep -o 'studio-token" content="[^"]*' 
 curl -s http://127.0.0.1:7860/api/crews -H "X-Studio-Token: $TOKEN"
 ```
 
+## Authentication
+
+The interface is password-protected. Every endpoint except the ones below requires a session:
+otherwise `401 {"auth": true}`; while a mandatory password change is pending —
+`403 {"password_change_required": true}`.
+
+| Method | Path | Body | Response |
+|---|---|---|---|
+| GET | `/api/auth/state` | — | `{has_users, user}` |
+| POST | `/api/auth/login` | `{username, password}` | `{user, role, must_change}` + `Set-Cookie` |
+| POST | `/api/auth/register` | `{username, password}` | `201 {user, role}` + `Set-Cookie` |
+| POST | `/api/auth/logout` | — | `{ok}` and a cleared cookie |
+| GET | `/api/auth/me` | — | `{user}` or 401 |
+| POST | `/api/auth/password` | `{current, new}` | `{ok}`; session required |
+
+The session is the `studio_session` cookie (HttpOnly, SameSite=Lax); its lifetime comes from
+`session_ttl_hours`. Mutating requests also need `X-Studio-Token` (from the page meta tag), except
+`/api/auth/*`.
+
 ## Errors
 
 | Code | When |

@@ -110,6 +110,8 @@ The interface is protected by a password. On first start the administrator is cr
 - Session lifetime is configurable in Settings → Account (1 hour — 7 days).
 - Register another account from the link on the login page.
 - Change the password in Settings → Account (current, new, at least 8 characters).
+- Details: [auth.md](auth.md) — sessions, roles, access recovery, and [logging.md](logging.md) — logs.
+- Details: [auth.md](auth.md) — sessions, roles, access recovery.
 
 ## Running
 
@@ -163,6 +165,13 @@ downloading stay inside the workspace and the outputs folder.
 - **Folder access** — extra roots for the workspace browser.
 - **Environment variables** — only `*_API_KEY`, `*_BASE_URL` and `STUDIO_*`.
 - **Interface language** — Russian or English; the interface re-renders immediately.
+
+## Logs and diagnostics
+
+- App logs: `data/logs/app-YYYYMMDD.jsonl` (JSON Lines, 10 MB rotation, 30-day retention).
+- A 500 error shows an `error_id`; the record is found by it in the log, and `request_id` links it to the request.
+- Run history and events live in `data/runs/` and on the run page.
+- Details: [logging.md](logging.md).
 
 ## Data locations
 

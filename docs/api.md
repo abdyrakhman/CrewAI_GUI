@@ -36,6 +36,23 @@ $h = @{ 'X-Studio-Token' = $token; 'Content-Type' = 'application/json' }
 Invoke-RestMethod 'http://127.0.0.1:7860/api/crews' -Headers $h
 ```
 
+## Авторизация
+
+Интерфейс закрыт паролем. Все эндпоинты, кроме перечисленных ниже, требуют сессию: без неё
+`401 {"auth": true}`; пока не выполнена обязательная смена пароля — `403 {"password_change_required": true}`.
+
+| Метод | Путь | Тело | Ответ |
+|---|---|---|---|
+| GET | `/api/auth/state` | — | `{has_users, user}` |
+| POST | `/api/auth/login` | `{username, password}` | `{user, role, must_change}` + `Set-Cookie` |
+| POST | `/api/auth/register` | `{username, password}` | `201 {user, role}` + `Set-Cookie` |
+| POST | `/api/auth/logout` | — | `{ok}` и сброс cookie |
+| GET | `/api/auth/me` | — | `{user}` или 401 |
+| POST | `/api/auth/password` | `{current, new}` | `{ok}`; нужна сессия |
+
+Сессия — cookie `studio_session` (HttpOnly, SameSite=Lax); срок задаётся настройкой `session_ttl_hours`.
+Изменяющие запросы дополнительно требуют `X-Studio-Token` (он в мета-теге страницы), кроме `/api/auth/*`.
+
 ## Коды ошибок
 
 | Код | Когда |

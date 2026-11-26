@@ -77,7 +77,9 @@ Full documentation is available in Russian and English:
 | User guide | [docs/en/user-guide.md](docs/en/user-guide.md) | [docs/user-guide.md](docs/user-guide.md) |
 | Architecture | [docs/en/architecture.md](docs/en/architecture.md) | [docs/architecture.md](docs/architecture.md) |
 | REST API and SSE | [docs/en/api.md](docs/en/api.md) | [docs/api.md](docs/api.md) |
-| Security | [docs/en/security.md](docs/en/security.md) | [docs/security.md](docs/security.md) |
+| Security | [docs/en/auth.md](docs/en/auth.md) | sign-in, accounts, forced password change, session lifetime, recovery |
+| [docs/en/logging.md](docs/en/logging.md) | `data/logs`, response codes, `error_id`, run logs, diagnostics |
+| [docs/en/security.md](docs/en/security.md) | [docs/security.md](docs/security.md) |
 | Tests | [docs/en/testing.md](docs/en/testing.md) | [docs/testing.md](docs/testing.md) |
 | Troubleshooting | [docs/en/troubleshooting.md](docs/en/troubleshooting.md) | [docs/troubleshooting.md](docs/troubleshooting.md) |
 | Changelog | [CHANGELOG.md](CHANGELOG.md) | |

@@ -128,7 +128,9 @@ async function api(path, { method = "GET", body = null } = {}) {
     const message =
       response.status === 403
         ? "Сессия устарела или запрос отклонён защитой. Обновите страницу (Ctrl+F5)."
-        : data.error || `HTTP ${response.status}`;
+        : data.error
+          ? `${data.error}${data.error_id ? ` (код: ${data.error_id})` : ""}`
+          : `HTTP ${response.status}`;
     const error = new Error(message);
     error.payload = data;
     error.status = response.status;

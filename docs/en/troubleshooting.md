@@ -88,3 +88,22 @@ pressed Deny. Run again and answer the request.
 
 If an error is unclear, open `data/logs/app-YYYYMMDD.jsonl`: it contains `request_id`,
 `error_id` and the traceback. A `500` response carries an `error_id` too.
+
+
+## Forgot the password
+
+1. Stop the app.
+2. Delete `data/users.json` (and `data/sessions.json` to drop sessions).
+3. Start again: `admin / 123admin!` is recreated, or the `CREWAI_STUDIO_ADMIN_*` values are used.
+
+This removes all accounts: passwords are stored irreversibly. Then change the password in Settings → Account.
+
+## 500 error and error_id
+
+The response carries `error_id` and the `X-Request-Id` header. Find the record:
+
+```powershell
+Select-String -Path data\logs\app-*.jsonl -Pattern '"error_id":"a1b2c3d4"'
+```
+
+It contains the traceback; `request_id` points to the exact request. See [logging.md](logging.md).
