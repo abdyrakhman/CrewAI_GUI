@@ -10,7 +10,9 @@
 Браузер (web/index.html + app.js + styles.css)
         │  REST + SSE, токен сессии, только 127.0.0.1
         ▼
-app/server.py            HTTP-транспорт, маршруты, SSE, статика
+app/server.py            HTTP-транспорт, статика, SSE, диспетчеризация
+├── app/api/dispatch.py  обработчики REST API
+├── app/auth.py          аккаунты и сессии
         │
         ├── app/spec.py          нормализация и проверка проекта
         ├── app/workspace.py     политика рабочих областей
