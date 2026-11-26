@@ -310,6 +310,18 @@ class Store:
             for key, value in (patch or {}).items():
                 if key not in DEFAULT_SETTINGS or key in {"secret_flags", "env_flags"}:
                     continue
+                if key == "run_timeout_minutes":
+                    try:
+                        current[key] = max(0.0, min(float(value), 1440.0))
+                    except (TypeError, ValueError):
+                        pass
+                    continue
+                if key == "max_iter_cap":
+                    try:
+                        current[key] = max(1, min(int(float(value)), 100))
+                    except (TypeError, ValueError):
+                        pass
+                    continue
                 if key == "runs_retention_days":
                     try:
                         current[key] = max(0, min(int(float(value)), 3650))

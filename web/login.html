@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CrewAI Studio — вход</title>
+<title data-i18n="title">CrewAI Studio — вход</title>
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
@@ -50,30 +50,30 @@
       <div class="logo">M</div>
       <div>
         <h1>CrewAI Studio</h1>
-        <div class="sub" id="brand-sub">локальный интерфейс</div>
+        <div class="sub" id="brand-sub" data-i18n="brand.sub">локальный интерфейс</div>
       </div>
     </div>
 
     <div id="login-block">
-      <h2>Вход</h2>
-      <p class="hint">Введите логин и пароль, чтобы открыть рабочее пространство.</p>
-      <label for="login-user">Логин</label>
-      <input id="login-user" name="username" autocomplete="username" spellcheck="false">
-      <label for="login-pass">Пароль</label>
-      <input id="login-pass" name="password" type="password" autocomplete="current-password">
-      <button type="submit" id="login-submit">Войти</button>
-      <div class="switch">Нет аккаунта? <a id="to-register">Зарегистрироваться</a></div>
+      <h2 data-i18n="login.title">Вход</h2>
+      <p class="hint" data-i18n="login.hint">Введите логин и пароль, чтобы открыть рабочее пространство.</p>
+      <label for="login-user" data-i18n="login.user">Логин</label>
+      <input id="login-user" name="username" autocomplete="username" spellcheck="false" data-i18n-ph="login.user">
+      <label for="login-pass" data-i18n="login.pass">Пароль</label>
+      <input id="login-pass" name="password" type="password" autocomplete="current-password" data-i18n-ph="login.pass">
+      <button type="submit" id="login-submit" data-i18n="login.submit">Войти</button>
+      <div class="switch"><span data-i18n="login.noAccount">Нет аккаунта?</span> <a id="to-register" data-i18n="login.register">Зарегистрироваться</a></div>
     </div>
 
     <div id="register-block" class="hidden">
-      <h2 id="register-title">Регистрация</h2>
-      <p class="hint" id="register-hint">Создайте аккаунт: логин 3–32 символа, пароль не короче 8.</p>
-      <label for="reg-user">Логин</label>
-      <input id="reg-user" name="new_username" autocomplete="username" spellcheck="false">
-      <label for="reg-pass">Пароль</label>
-      <input id="reg-pass" name="new_password" type="password" autocomplete="new-password">
-      <button type="submit" id="register-submit">Создать аккаунт</button>
-      <div class="switch" id="register-switch">Уже есть аккаунт? <a id="to-login">Войти</a></div>
+      <h2 id="register-title" data-i18n="register.title">Регистрация</h2>
+      <p class="hint" id="register-hint" data-i18n="register.hint">Создайте аккаунт: логин 3–32 символа, пароль не короче 8.</p>
+      <label for="reg-user" data-i18n="register.user">Логин</label>
+      <input id="reg-user" name="new_username" autocomplete="username" spellcheck="false" data-i18n-ph="register.user">
+      <label for="reg-pass" data-i18n="register.pass">Пароль</label>
+      <input id="reg-pass" name="new_password" type="password" autocomplete="new-password" data-i18n-ph="register.pass">
+      <button type="submit" id="register-submit" data-i18n="register.submit">Создать аккаунт</button>
+      <div class="switch" id="register-switch"><span data-i18n="register.hasAccount">Уже есть аккаунт?</span> <a id="to-login" data-i18n="register.login">Войти</a></div>
     </div>
 
     <div class="error hidden" id="auth-error"></div>

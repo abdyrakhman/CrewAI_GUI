@@ -174,6 +174,36 @@ def _tool_target(raw: object) -> str:
     return text[:160]
 
 
+def _timeout_seconds(settings: dict) -> float:
+    """Wall-clock limit for one run; 0 disables it."""
+    raw = (os.environ.get("CREWAI_STUDIO_RUN_TIMEOUT_SECONDS") or "").strip()
+    if raw:
+        try:
+            return max(0.0, float(raw))
+        except ValueError:
+            pass
+    try:
+        minutes = float(settings.get("run_timeout_minutes") or 0)
+    except (TypeError, ValueError):
+        return 0.0
+    return minutes * 60 if minutes > 0 else 0.0
+
+
+def _effective_max_iter(requested: int, cap: int) -> int:
+    try:
+        requested = int(requested)
+    except (TypeError, ValueError):
+        requested = 12
+    try:
+        cap = int(cap)
+    except (TypeError, ValueError):
+        cap = 20
+    requested = max(1, requested)
+    if cap > 0:
+        return min(requested, cap)
+    return requested
+
+
 class RunState:
     """One execution: its event log, aggregated text and final result."""
 
@@ -444,6 +474,11 @@ class RunManager:
         state.persist_cb = lambda: self.store.save_run(state.snapshot())
         thread = threading.Thread(target=self._execute_safe, args=(state, settings), name=f"run-{run_id}", daemon=True)
         thread.start()
+        timeout = _timeout_seconds(settings)
+        if timeout > 0:
+            threading.Thread(
+                target=self._timeout_watchdog, args=(state, timeout), daemon=True, name=f"timeout-{run_id}"
+            ).start()
         return state
 
     def _trim_memory(self) -> None:
@@ -462,6 +497,19 @@ class RunManager:
         if cancelled:
             threading.Thread(target=self._cancel_watchdog, args=(state,), daemon=True).start()
         return cancelled
+
+    def _timeout_watchdog(self, state: RunState, seconds: float) -> None:
+        """Stop a run that exceeded the configured wall-clock limit."""
+        deadline = time.time() + seconds
+        while time.time() < deadline:
+            if state.status in TERMINAL:
+                return
+            time.sleep(0.25)
+        if state.status not in {"running", "queued"}:
+            return
+        label = f"{max(1, round(seconds / 60))} мин" if seconds >= 60 else f"{max(1, round(seconds))} с"
+        state.emit("warning", {"message": f"Превышен лимит времени запуска ({label}) — останавливаю"})
+        self.cancel(state.id)
 
     def _cancel_watchdog(self, state: RunState, grace: float = 12.0) -> None:
         """A model call or tool can ignore the flag: mark the run forced, keep the slot."""
@@ -585,6 +633,7 @@ class RunManager:
             state.emit("warning", {"message": memory_note})
 
         agent_specs = state.crew_spec.get("agents", [])
+        iter_cap = int(settings.get("max_iter_cap") or 20)
         max_iter_top = max((int(a.get("max_iter") or 12) for a in agent_specs), default=12)
         time_limits = [int(a.get("max_execution_time") or 0) for a in agent_specs]
         reasoning_count = sum(1 for a in agent_specs if a.get("reasoning"))
@@ -637,13 +686,18 @@ class RunManager:
         agent_meta: list[dict] = []
         default_global = settings.get("default_llm", "")
         llm_timeout = int(settings.get("llm_timeout") or 120)
+        capped_agents = 0
         for spec in state.crew_spec.get("agents", []):
             llm = resolve_llm(spec.get("llm", ""), state.crew_spec.get("default_llm", ""), default_global)
+            requested_iter = int(spec.get("max_iter") or 12)
+            effective_iter = _effective_max_iter(requested_iter, iter_cap)
+            if effective_iter < requested_iter:
+                capped_agents += 1
             kwargs: dict[str, Any] = {
                 "role": spec.get("role", "") or "Помощник",
                 "goal": spec.get("goal", "") or "Выполнить задачу",
                 "backstory": spec.get("backstory", "") or "Опытный специалист",
-                "max_iter": int(spec.get("max_iter") or 12),
+                "max_iter": effective_iter,
                 "allow_delegation": bool(spec.get("allow_delegation")),
                 "cache": bool(spec.get("cache", True)),
                 "reasoning": bool(spec.get("reasoning")),
@@ -676,6 +730,16 @@ class RunManager:
                  "tools": [t.name if hasattr(t, "name") else str(t) for t in tools_built]}
             )
 
+        if capped_agents:
+            state.emit(
+                "warning",
+                {
+                    "message": (
+                        f"Лимит итераций агента ограничен настройкой: {iter_cap} "
+                        f"(у {capped_agents} агент(ов) было больше)"
+                    ),
+                },
+            )
         tasks: list[Any] = []
         task_by_id: dict[str, Any] = {}
         task_meta: list[dict] = []

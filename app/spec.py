@@ -278,8 +278,13 @@ def validate_crew(
                     )
                 elif tool not in tools_known:
                     warn(f"{base}.tools", f"Инструмент «{tool}» недоступен в этом окружении")
-        if _coerce_int(agent.get("max_iter"), AGENT_DEFAULTS["max_iter"]) > 12:
-            warn(f"{base}.max_iter", "Больше 12 итераций: агент может долго перебирать варианты и тратить токены")
+        requested_iter = _coerce_int(agent.get("max_iter"), AGENT_DEFAULTS["max_iter"])
+        if requested_iter > 12:
+            warn(
+                f"{base}.max_iter",
+                "Больше 12 итераций: агент может долго перебирать варианты и тратить токены. "
+                "Жёсткий предел задаётся настройкой «Лимит итераций агента».",
+            )
         if agent.get("reasoning"):
             warn(f"{base}.reasoning", "Рассуждения добавляют отдельный запрос к модели на каждом шаге — запуск идёт медленнее")
 
