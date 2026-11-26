@@ -98,7 +98,7 @@ More detail: [docs/en/architecture.md](docs/en/architecture.md).
 
 ## Tests
 
-15 suites, no tokens spent: a local OpenAI-compatible mock replaces the provider.
+22 suites, no tokens spent: a local OpenAI-compatible mock replaces the provider.
 
 ```bat
 .venv\Scripts\python.exe tests\test_runner_e2e.py

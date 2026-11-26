@@ -84,7 +84,7 @@
 | [docs/auth.md](docs/auth.md) | вход, аккаунты, обязательная смена пароля, время жизни сессии, восстановление |
 | [docs/logging.md](docs/logging.md) | логи `data/logs`, коды ошибок, `error_id`, логи запусков, диагностика |
 | [docs/security.md](docs/security.md) | модель доверия, что закрыто, остаточные риски и рекомендации |
-| [docs/testing.md](docs/testing.md) | 20 наборов тестов: что покрывают и как запускать |
+| [docs/testing.md](docs/testing.md) | 22 набора тестов: что покрывают и как запускать |
 | [docs/troubleshooting.md](docs/troubleshooting.md) | частые ошибки и что делать |
 | [CHANGELOG.md](CHANGELOG.md) | история версий |
 
@@ -120,7 +120,7 @@ app/tools.py          встроенные инструменты + опцион
 app/server.py         HTTP API, Server-Sent Events, статика
 web/                  интерфейс: index.html, app.js, styles.css
 data/                 проекты, роли, шаблоны, история, файлы, ключи
-tests/                мок-модель и пятнадцать наборов тестов
+tests/                мок-модель и двадцать два набора тестов
 ```
 
 Запуск использует штатные объекты CrewAI: `Agent`, `Task`, `Crew`, `Process`. Прогресс берётся из шины событий CrewAI (`crewai.events`) и из потокового вывода (`Crew(stream=True)`), поэтому интерфейс показывает не только финальный ответ, но и то, что происходит внутри задачи.
