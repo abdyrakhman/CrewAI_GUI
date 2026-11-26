@@ -195,6 +195,14 @@ downloading stay inside the workspace and the outputs folder.
   (logs and sessions excluded). “with run history” adds `runs/`.
 - API keys in the archive stay encrypted and are decrypted only on this machine.
 
+## Diagnostics in the UI
+
+**Settings → Diagnostics**:
+
+- **Recent errors** — log records with error_id and a traceback, plus a **Copy** button.
+- **Recent records** — the tail of data/logs/app-YYYYMMDD.jsonl.
+- When an error carries an error_id, the notification shows a **Copy code** button.
+
 ## Logs and diagnostics
 
 - App logs: `data/logs/app-YYYYMMDD.jsonl` (JSON Lines, 10 MB rotation, 30-day retention).

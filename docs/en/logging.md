@@ -34,6 +34,11 @@ Select-String -Path data\logs\app-*.jsonl -Pattern '"error_id":"a1b2c3d4"'
 
 - `request_id` links the error to a specific request in the same file.
 
+## Log in the UI
+
+GET /api/logs/recent?limit=150&errors=1 returns the log tail (up to 500 lines) for
+Settings → Diagnostics. A session is required; secrets are already replaced with [redacted].
+
 ## Run logs
 
 - `data/runs/<id>.json` — status, events, streamed answers, warnings, result and token usage.

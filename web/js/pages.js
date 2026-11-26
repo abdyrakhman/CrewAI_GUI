@@ -53,6 +53,7 @@ function renderEmptyView() {
 /* --------------------------------------------------------------- history */
 
 let historyPage = { limit: 50, offset: 0, status: "", total: 0 };
+let logText = "";
 
 async function refreshHistory(offset = 0, status = null) {
   if (status !== null) {
@@ -557,6 +558,23 @@ function providerBlock(provider) {
     </div>`;
 }
 
+async function showLog(errorsOnly) {
+  try {
+    const data = await api(`/api/logs/recent?limit=150${errorsOnly ? "&errors=1" : ""}`);
+    logText = (data.lines || []).join("\n") || "Записей нет";
+    openModal({
+      title: errorsOnly ? "Последние ошибки" : "Последние записи журнала",
+      wide: true,
+      body: `<p class="hint-text">Файл: <span class="mono">${esc(data.file || "")}</span></p>
+             <pre style="max-height:52vh;overflow:auto;background:#0f1220;border:1px solid #232838;border-radius:10px;padding:12px;font-size:12px;white-space:pre-wrap;word-break:break-all">${esc(logText)}</pre>`,
+      footer: `<button class="btn btn-ghost" data-action="copy-log">${icon("copy", 15)} Копировать</button>
+               <button class="btn btn-primary" data-action="close-modal">Закрыть</button>`,
+    });
+  } catch (error) {
+    toast(error.message, "err");
+  }
+}
+
 function renderSettings() {
   const settings = state.settings || {};
   $("#view").innerHTML = `
@@ -629,6 +647,20 @@ function renderSettings() {
                     .join("")}
                 </select>
                 <span class="hint-text">Старые запуски удаляются при следующем старте приложения. Всего хранится не больше 5000 записей.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-head"><h2>Диагностика</h2></div>
+            <div class="card-body">
+              <p class="hint-text" style="margin:0 0 10px">
+                Журнал приложения: <span class="mono">data/logs/app-YYYYMMDD.jsonl</span>. Внутренние ошибки
+                содержат <code>error_id</code> — код можно скопировать из уведомления или из журнала.
+              </p>
+              <div class="row-wrap" style="gap:8px">
+                <button class="btn" data-action="show-errors"> Последние ошибки</button>
+                <button class="btn btn-ghost btn-sm" data-action="show-log">Последние записи</button>
               </div>
             </div>
           </div>

@@ -224,6 +224,14 @@ Event types: `run_started`, `task_started`, `task_done`, `tool_start`, `tool_end
 
 The backup excludes logs and sessions. Encrypted API keys stay bound to this machine.
 
+## Log
+
+| Method | Path | Parameters |
+|---|---|---|
+| GET | /api/logs/recent | limit (1–500), errors=1 — errors only |
+
+Response: {file, lines, count}. Secrets in lines are already redacted.
+
 ## Settings
 
 | Method | Path | Body | Response |

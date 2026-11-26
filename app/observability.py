@@ -96,3 +96,25 @@ def log_event(kind: str, **fields: object) -> None:
 
 
 _cleanup()
+
+
+def recent_lines(limit: int = 200, errors_only: bool = False) -> tuple[str, list[str]]:
+    """Tail of today's JSONL log for the diagnostics screen."""
+    try:
+        limit = max(1, min(int(limit), 500))
+    except (TypeError, ValueError):
+        limit = 200
+    path = _path()
+    if not path.exists():
+        return path.name, []
+    try:
+        size = path.stat().st_size
+        with path.open("rb") as handle:
+            handle.seek(max(0, size - 512 * 1024))
+            raw = handle.read().decode("utf-8", "replace")
+    except OSError:
+        return path.name, []
+    lines = [line for line in raw.splitlines() if line.strip()]
+    if errors_only:
+        lines = [line for line in lines if '"kind": "error"' in line or '"kind":"error"' in line]
+    return path.name, lines[-limit:]
