@@ -40,6 +40,8 @@ DEFAULT_SETTINGS: dict = {
     "ui_language": "ru",
     "session_ttl_hours": 12,
     "runs_retention_days": 180,
+    "run_timeout_minutes": 60,
+    "max_iter_cap": 20,
     "theme": "dark",
 }
 

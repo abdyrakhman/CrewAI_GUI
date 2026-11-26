@@ -197,6 +197,15 @@ downloading stay inside the workspace and the outputs folder.
   (logs and sessions excluded). “with run history” adds `runs/`.
 - API keys in the archive stay encrypted and are decrypted only on this machine.
 
+## Run limits
+
+In **Settings → Run**:
+
+- **Run time limit** — 15 minutes, 30 minutes, 1/2/3 hours or “no limit” (1 hour by default).
+  When reached, the run is stopped and an event says “Run time limit exceeded”.
+- **Agent iteration limit** — 1–100 (20 by default). A larger per-agent value is capped at run time,
+  and the event log shows a warning.
+
 ## Logs and diagnostics
 
 - App logs: `data/logs/app-YYYYMMDD.jsonl` (JSON Lines, 10 MB rotation, 30-day retention).
