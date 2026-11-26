@@ -27,6 +27,8 @@ PBKDF2_ROUNDS = 200_000
 USERNAME_RE = re.compile(r"^[A-Za-z0-9_.\-]{3,32}$")
 
 DEFAULT_ADMIN = ("admin", "123admin!")
+DEFAULT_TTL_HOURS = 12
+MAX_TTL_HOURS = 24 * 30
 
 _lock = threading.RLock()
 _users_cache: dict | None = None
@@ -81,13 +83,14 @@ def get_user(username: str) -> dict | None:
     return load_users().get(username)
 
 
-def create_user(username: str, password: str, role: str = "user") -> dict:
+def create_user(username: str, password: str, role: str = "user", must_change: bool = False) -> dict:
     username = str(username or "").strip()
     password = str(password or "")
     if not USERNAME_RE.match(username):
         raise ValueError("Логин: 3–32 символа, буквы, цифры, точка, дефис или подчёркивание")
     if len(password) < 8:
         raise ValueError("Пароль должен быть не короче 8 символов")
+    must_change = bool(must_change)
     with _lock:
         users = dict(load_users())
         if username in users:
@@ -98,20 +101,40 @@ def create_user(username: str, password: str, role: str = "user") -> dict:
             "password_hash": digest,
             "salt": salt,
             "role": role if role in {"admin", "user"} else "user",
+            "must_change": must_change,
             "created_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
         }
         save_users(users)
         return {k: users[username][k] for k in ("username", "role", "created_at")}
 
 
+def must_change(username: str) -> bool:
+    record = get_user(username) or {}
+    return bool(record.get("must_change"))
+
+
+def migrate_must_change() -> None:
+    """Accounts created before the flag existed must set a new password once."""
+    with _lock:
+        users = dict(load_users())
+        changed = False
+        for record in users.values():
+            if "must_change" not in record:
+                record["must_change"] = True
+                changed = True
+        if changed:
+            save_users(users)
+
+
 def ensure_default_admin() -> str | None:
     """Create the first administrator when no accounts exist yet."""
     if has_users():
+        migrate_must_change()
         return None
     username = os.environ.get("CREWAI_STUDIO_ADMIN_USER", DEFAULT_ADMIN[0])
     password = os.environ.get("CREWAI_STUDIO_ADMIN_PASSWORD", DEFAULT_ADMIN[1])
     try:
-        create_user(username, password, role="admin")
+        create_user(username, password, role="admin", must_change=True)
         return username
     except ValueError:
         return None
@@ -127,7 +150,12 @@ def change_password(username: str, current: str, new_password: str) -> None:
         if len(str(new_password or "")) < 8:
             raise ValueError("Новый пароль должен быть не короче 8 символов")
         digest, salt = hash_password(str(new_password))
-        record.update({"password_hash": digest, "salt": salt, "updated_at": time.strftime("%Y-%m-%dT%H:%M:%S")})
+        record.update({
+            "password_hash": digest,
+            "salt": salt,
+            "must_change": False,
+            "updated_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        })
         users[username] = record
         save_users(users)
 
@@ -146,13 +174,17 @@ def _token_hash(token: str) -> str:
     return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
 
-def create_session(username: str) -> str:
+def create_session(username: str, ttl_hours: float | int = DEFAULT_TTL_HOURS) -> str:
     token = secrets.token_urlsafe(32)
     with _lock:
         sessions = _load_sessions()
         now = time.time()
         sessions = {key: value for key, value in sessions.items() if value.get("expires", 0) > now}
-        sessions[_token_hash(token)] = {"username": username, "expires": now + SESSION_TTL}
+        try:
+            ttl = max(1.0, min(float(ttl_hours), MAX_TTL_HOURS)) * 3600
+        except (TypeError, ValueError):
+            ttl = DEFAULT_TTL_HOURS * 3600
+        sessions[_token_hash(token)] = {"username": username, "expires": now + ttl}
         _save_sessions(sessions)
     return token
 

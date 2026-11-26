@@ -59,7 +59,11 @@
         const username = loginUser.value.trim();
         const password = loginPass.value;
         if (!username || !password) throw new Error("Введите логин и пароль");
-        await post("/api/auth/login", { username, password });
+        const result = await post("/api/auth/login", { username, password });
+        if (result.must_change) {
+          location.replace("/change-password.html");
+          return;
+        }
       } else {
         const username = regUser.value.trim();
         const password = regPass.value;
