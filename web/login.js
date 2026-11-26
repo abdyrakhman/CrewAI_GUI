@@ -1,5 +1,59 @@
 (function () {
-  const state = { hasUsers: true, mode: "login" };
+  const TEXT = {
+    ru: {
+      title: "CrewAI Studio — вход",
+      "brand.sub": "локальный интерфейс",
+      "login.title": "Вход",
+      "login.hint": "Введите логин и пароль, чтобы открыть рабочее пространство.",
+      "login.user": "Логин",
+      "login.pass": "Пароль",
+      "login.submit": "Войти",
+      "login.noAccount": "Нет аккаунта?",
+      "login.register": "Зарегистрироваться",
+      "register.title": "Регистрация",
+      "register.hint": "Создайте аккаунт: логин 3–32 символа, пароль не короче 8.",
+      "register.firstTitle": "Первый запуск",
+      "register.firstHint": "Аккаунтов ещё нет. Создайте администратора: логин 3–32 символа, пароль не короче 8.",
+      "register.user": "Логин",
+      "register.pass": "Пароль",
+      "register.submit": "Создать аккаунт",
+      "register.hasAccount": "Уже есть аккаунт?",
+      "register.login": "Войти",
+      "error.fill": "Введите логин и пароль",
+      "error.short": "Пароль должен быть не короче 8 символов",
+      "error.offline": "Сервер недоступен. Обновите страницу.",
+      "error.request": "Не удалось выполнить запрос",
+    },
+    en: {
+      title: "CrewAI Studio — sign in",
+      "brand.sub": "local interface",
+      "login.title": "Sign in",
+      "login.hint": "Enter your login and password to open the workspace.",
+      "login.user": "Login",
+      "login.pass": "Password",
+      "login.submit": "Sign in",
+      "login.noAccount": "No account?",
+      "login.register": "Register",
+      "register.title": "Registration",
+      "register.hint": "Create an account: login 3–32 characters, password at least 8.",
+      "register.firstTitle": "First launch",
+      "register.firstHint": "No accounts yet. Create the administrator: login 3–32 characters, password at least 8.",
+      "register.user": "Login",
+      "register.pass": "Password",
+      "register.submit": "Create account",
+      "register.hasAccount": "Already have an account?",
+      "register.login": "Sign in",
+      "error.fill": "Enter the login and password",
+      "error.short": "The password must be at least 8 characters",
+      "error.offline": "Server is unavailable. Reload the page.",
+      "error.request": "The request failed",
+    },
+  };
+
+  const state = { hasUsers: true, mode: "login", lang: "ru" };
+  const dict = () => TEXT[state.lang] || TEXT.ru;
+  const t = (key) => dict()[key] || TEXT.ru[key] || key;
+
   const loginBlock = document.getElementById("login-block");
   const registerBlock = document.getElementById("register-block");
   const errorBox = document.getElementById("auth-error");
@@ -9,6 +63,22 @@
   const loginPass = document.getElementById("login-pass");
   const regUser = document.getElementById("reg-user");
   const regPass = document.getElementById("reg-pass");
+
+  function applyLanguage(lang) {
+    state.lang = lang === "en" ? "en" : "ru";
+    document.documentElement.lang = state.lang;
+    document.title = t("title");
+    document.querySelectorAll("[data-i18n]").forEach((node) => {
+      node.textContent = t(node.dataset.i18n);
+    });
+    document.querySelectorAll("[data-i18n-ph]").forEach((node) => {
+      node.placeholder = t(node.dataset.i18nPh);
+    });
+    if (state.mode === "register") {
+      registerTitle.textContent = state.hasUsers ? t("register.title") : t("register.firstTitle");
+      registerHint.textContent = state.hasUsers ? t("register.hint") : t("register.firstHint");
+    }
+  }
 
   function showError(message) {
     errorBox.textContent = message;
@@ -27,10 +97,8 @@
     registerBlock.classList.toggle("hidden", !register);
     clearError();
     if (register) {
-      registerTitle.textContent = state.hasUsers ? "Регистрация" : "Первый запуск";
-      registerHint.textContent = state.hasUsers
-        ? "Создайте аккаунт: логин 3–32 символа, пароль не короче 8."
-        : "Аккаунтов ещё нет. Создайте администратора: логин 3–32 символа, пароль не короче 8.";
+      registerTitle.textContent = state.hasUsers ? t("register.title") : t("register.firstTitle");
+      registerHint.textContent = state.hasUsers ? t("register.hint") : t("register.firstHint");
       document.getElementById("register-switch").classList.toggle("hidden", !state.hasUsers);
       regUser.focus();
     } else {
@@ -46,7 +114,7 @@
     });
     let data = {};
     try { data = await response.json(); } catch (e) { /* empty body */ }
-    if (!response.ok) throw new Error(data.error || "Не удалось выполнить запрос");
+    if (!response.ok) throw new Error(data.error || t("error.request"));
     return data;
   }
 
@@ -58,7 +126,7 @@
       if (state.mode === "login") {
         const username = loginUser.value.trim();
         const password = loginPass.value;
-        if (!username || !password) throw new Error("Введите логин и пароль");
+        if (!username || !password) throw new Error(t("error.fill"));
         const result = await post("/api/auth/login", { username, password });
         if (result.must_change) {
           location.replace("/change-password.html");
@@ -67,8 +135,8 @@
       } else {
         const username = regUser.value.trim();
         const password = regPass.value;
-        if (!username || !password) throw new Error("Введите логин и пароль");
-        if (password.length < 8) throw new Error("Пароль должен быть не короче 8 символов");
+        if (!username || !password) throw new Error(t("error.fill"));
+        if (password.length < 8) throw new Error(t("error.short"));
         await post("/api/auth/register", { username, password });
       }
       location.replace("/");
@@ -89,11 +157,17 @@
     .then((response) => response.json())
     .then((data) => {
       state.hasUsers = Boolean(data.has_users);
+      const fallback = (navigator.language || "").toLowerCase().startsWith("ru") ? "ru" : "en";
+      applyLanguage(data.language === "en" ? "en" : data.language === "ru" ? "ru" : fallback);
       if (data.user) {
         location.replace("/");
         return;
       }
       setMode(state.hasUsers ? "login" : "register");
     })
-    .catch(() => showError("Сервер недоступен. Обновите страницу."));
+    .catch(() => {
+      const fallback = (navigator.language || "").toLowerCase().startsWith("ru") ? "ru" : "en";
+      applyLanguage(fallback);
+      showError(t("error.offline"));
+    });
 })();

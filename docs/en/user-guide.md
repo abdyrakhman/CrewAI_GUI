@@ -101,6 +101,8 @@ app handles it for you.
 
 ## Signing in
 
+- The login and password-change pages follow the interface language setting (RU/EN).
+
 The interface is protected by a password. On first start the administrator is created as
 **admin / 123admin!** — change it in **Settings → Account**.
 
