@@ -44,8 +44,8 @@ otherwise `401 {"auth": true}`; while a mandatory password change is pending —
 | Method | Path | Body | Response |
 |---|---|---|---|
 | GET | `/api/auth/state` | — | `{has_users, user}` |
-| POST | `/api/auth/login` | `{username, password}` | `{user, role, must_change}` + `Set-Cookie` |
-| POST | `/api/auth/register` | `{username, password}` | `201 {user, role}` + `Set-Cookie` |
+| POST | `/api/auth/login` | `{username, password}` | `{user, must_change}` + `Set-Cookie` |
+| POST | `/api/auth/register` | `{username, password}` | `201 {user, must_change}` + `Set-Cookie` |
 | POST | `/api/auth/logout` | — | `{ok}` and a cleared cookie |
 | POST | `/api/auth/logout-all` | — | `{ok, dropped_sessions}` — ends all sessions of the user |
 | GET | `/api/auth/me` | — | `{user}` or 401 |
@@ -208,6 +208,16 @@ Event types: `run_started`, `task_started`, `task_done`, `tool_start`, `tool_end
 | `GET` | `/api/files?crew_id=…` | workspace and task results |
 | `GET` | `/api/files/output/{name}?crew_id=…` | result file contents |
 | `POST` | `/api/files` | `{"name","data":"base64","crew_id"}` → `{"ok","path"}` |
+
+## Export, import and backup
+
+| Method | Path | What it does |
+|---|---|---|
+| GET | `/api/crews/{id}/export` | `project-<id>.json` with the project |
+| POST | `/api/crews/import` | `{crew}` or the project object → creates a new project (new id, empty workspace) |
+| GET | `/api/backup` | ZIP with projects, roles, templates, settings, accounts; `?runs=1` adds run history |
+
+The backup excludes logs and sessions. Encrypted API keys stay bound to this machine.
 
 ## Settings
 

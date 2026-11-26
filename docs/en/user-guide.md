@@ -173,6 +173,16 @@ downloading stay inside the workspace and the outputs folder.
 - **Environment variables** — only `*_API_KEY`, `*_BASE_URL` and `STUDIO_*`.
 - **Interface language** — Russian or English; the interface re-renders immediately.
 
+## Export, import and backup
+
+- **Export project:** the builder's **Export** button downloads `project-<id>.json` with agents, tasks,
+  inputs and settings; the workspace is not included.
+- **Import project:** the **Import project** button in the sidebar — pick a JSON file. A new project is
+  created with a new id; the workspace is reset and must be chosen again.
+- **Data backup:** Settings → Backup — a ZIP with projects, roles, templates, settings and accounts
+  (logs and sessions excluded). “with run history” adds `runs/`.
+- API keys in the archive stay encrypted and are decrypted only on this machine.
+
 ## Logs and diagnostics
 
 - App logs: `data/logs/app-YYYYMMDD.jsonl` (JSON Lines, 10 MB rotation, 30-day retention).

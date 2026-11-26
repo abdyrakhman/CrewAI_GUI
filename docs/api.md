@@ -44,8 +44,8 @@ Invoke-RestMethod 'http://127.0.0.1:7860/api/crews' -Headers $h
 | Метод | Путь | Тело | Ответ |
 |---|---|---|---|
 | GET | `/api/auth/state` | — | `{has_users, user}` |
-| POST | `/api/auth/login` | `{username, password}` | `{user, role, must_change}` + `Set-Cookie` |
-| POST | `/api/auth/register` | `{username, password}` | `201 {user, role}` + `Set-Cookie` |
+| POST | `/api/auth/login` | `{username, password}` | `{user, must_change}` + `Set-Cookie` |
+| POST | `/api/auth/register` | `{username, password}` | `201 {user, must_change}` + `Set-Cookie` |
 | POST | `/api/auth/logout` | — | `{ok}` и сброс cookie |
 | POST | `/api/auth/logout-all` | — | `{ok, dropped_sessions}` — завершает все сессии пользователя |
 | GET | `/api/auth/me` | — | `{user}` или 401 |
@@ -214,6 +214,16 @@ data: {"ts":…,"type":"info","data":{"message":"…"}}
 | `GET` | `/api/files?crew_id=…` | рабочая область и результаты |
 | `GET` | `/api/files/output/{name}?crew_id=…` | содержимое файла результата |
 | `POST` | `/api/files` | `{"name","data":"base64","crew_id"}` → `{"ok","path"}` |
+
+## Экспорт, импорт и бэкап
+
+| Метод | Путь | Что делает |
+|---|---|---|
+| GET | `/api/crews/{id}/export` | файл `project-<id>.json` с проектом для переноса |
+| POST | `/api/crews/import` | `{crew}` или сам объект проекта → создаёт новый проект (новый id, пустая рабочая область) |
+| GET | `/api/backup` | ZIP: проекты, роли, шаблоны, настройки, аккаунты; `?runs=1` добавляет историю запусков |
+
+В бэкап не входят логи и сессии. Зашифрованные ключи API остаются привязанными к машине.
 
 ## Настройки
 
