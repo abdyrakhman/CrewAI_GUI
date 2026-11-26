@@ -30,6 +30,12 @@ function renderRun() {
   const status = run.status;
   $("#view").innerHTML = `
   <div class="view-inner run-layout">
+    <div id="perm-banner" class="alert warn hidden" style="margin-bottom:12px">
+      <div class="row" style="gap:12px;align-items:center">
+        <span class="grow" id="perm-banner-text">Запуск ждёт подтверждения доступа</span>
+        <button class="btn btn-sm" data-action="show-permission">Открыть запрос</button>
+      </div>
+    </div>
     <div class="run-banner">
       <div class="metric"><b id="run-timer">0:00</b><span>время</span></div>
       <div class="divider"></div>
@@ -585,6 +591,20 @@ function handlePermissionRequest(data) {
   setTimeout(showNextPermission, 350);
 }
 
+function updatePermissionBanner() {
+  const banner = $("#perm-banner");
+  if (!banner) return;
+  const pending = state.run?.pendingPermissions || [];
+  if (!pending.length) {
+    banner.classList.add("hidden");
+    return;
+  }
+  const first = pending[0];
+  const text = $("#perm-banner-text");
+  if (text) text.textContent = `Запуск ждёт подтверждения доступа: ${first.target || first.kind || "запрос"} (${pending.length})`;
+  banner.classList.remove("hidden");
+}
+
 function showNextPermission() {
   const run = state.run;
   if (!run || run.permissionOpen) return;
@@ -619,6 +639,14 @@ function showNextPermission() {
         Без ответа доступ закроется через ${minutes} мин.</p>`,
     footer: `<button class="btn btn-danger" data-action="perm-deny">Запретить</button>
              <button class="btn btn-primary" data-action="perm-allow">${icon("check", 15)} Разрешить</button>`,
+    onClose: () => {
+      if (run.permissionOpen === request.id) {
+        run.permissionOpen = null;
+        toast("Запуск ждёт подтверждения доступа — вернитесь к запросу", "err");
+      }
+      updateRunIndicator();
+      updatePermissionBanner();
+    },
   });
 }
 
@@ -647,6 +675,7 @@ function resolvePendingPermission(requestId, closeIfOpen = true) {
     closeModal();
   }
   updateRunIndicator();
+  updatePermissionBanner();
   setTimeout(showNextPermission, 200);
 }
 
@@ -659,6 +688,13 @@ function finishPermissions() {
     closeModal();
   }
   updateRunIndicator();
+  updatePermissionBanner();
+}
+
+function reopenPermission() {
+  if (!state.run) return;
+  state.run.permissionOpen = null;
+  showNextPermission();
 }
 
 function openActiveRun() {

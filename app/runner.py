@@ -273,6 +273,20 @@ class RunState:
             waiter["event"].set()
         return True
 
+    def pending_permissions(self) -> list[dict]:
+        """Requests the run is currently blocked on."""
+        with self._perm_lock:
+            return [
+                {
+                    "id": req_id,
+                    "kind": waiter.get("kind", ""),
+                    "target": waiter.get("target", ""),
+                    "grant": waiter.get("grant", "file"),
+                    "base": waiter.get("base", ""),
+                }
+                for req_id, waiter in self._perm_waiters.items()
+            ]
+
     def deny_pending_permissions(self, note: str = "Запуск остановлен") -> None:
         with self._perm_lock:
             for waiter in self._perm_waiters.values():

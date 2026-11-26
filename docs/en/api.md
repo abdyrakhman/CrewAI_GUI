@@ -172,6 +172,11 @@ Response: `{runs, total, limit, offset}`. Old runs are removed according to `run
 | `GET` | `/api/runs/{id}/export?format=md|json` | — | file |
 | `GET` | `/api/runs/{id}/events` | — | SSE |
 
+### Pending approvals
+
+`GET /api/runs/active` and `GET /api/runs/{id}` include `pending_permissions`: requests the run is
+blocked on (`id`, `kind`, `target`, `grant`, `base`). An empty list means nothing is pending.
+
 ### SSE
 
 ```

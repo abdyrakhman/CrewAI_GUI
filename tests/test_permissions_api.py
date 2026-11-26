@@ -79,10 +79,16 @@ def main() -> int:
         check("write asks for confirmation", request is not None and request["kind"] == "fs_write", str(request))
         check("request names the agent", bool(request and request.get("agent") == "Аналитик"), str(request))
         check("run waits for the answer", worker.is_alive())
+        pending = state.pending_permissions()
+        check("pending request is exposed by the state",
+              len(pending) == 1 and pending[0]["id"] == request["id"] and "report.md" in pending[0]["target"],
+              str(pending))
+
         check("event carries the target path", bool(request and "report.md" in request["target"]), str(request))
 
         state.answer_permission(request["id"], True)
         worker.join(5)
+        check("answered request leaves the pending list", state.pending_permissions() == [])
         check("allowed write lands on disk", (workspace / "report.md").is_file())
         check("tool reports success", "сохранён" in result.get("value", ""), result.get("value", ""))
 

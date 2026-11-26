@@ -354,6 +354,9 @@ function bindGlobalEvents() {
         }
         break;
       }
+      case "show-permission":
+        reopenPermission();
+        break;
       case "export-crew":
         if (state.crew?.id) window.location.href = `/api/crews/${state.crew.id}/export`;
         break;
