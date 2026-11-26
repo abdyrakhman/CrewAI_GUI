@@ -30,6 +30,12 @@ function renderRun() {
   const status = run.status;
   $("#view").innerHTML = `
   <div class="view-inner run-layout">
+    <div id="stream-banner" class="alert err hidden" style="margin-bottom:12px">
+      <div class="row" style="gap:12px;align-items:center">
+        <span class="grow" id="stream-banner-text">Связь с запуском потеряна — переподключаюсь…</span>
+        <button class="btn btn-sm" data-action="reconnect-stream">Переподключиться</button>
+      </div>
+    </div>
     <div id="perm-banner" class="alert warn hidden" style="margin-bottom:12px">
       <div class="row" style="gap:12px;align-items:center">
         <span class="grow" id="perm-banner-text">Запуск ждёт подтверждения доступа</span>
@@ -307,9 +313,14 @@ function attachRun(runId) {
     "task_failed", "agent_start", "agent_done", "tool_start", "tool_done", "tool_error",
     "llm_chunk", "usage", "warning", "info", "log", "error", "run_done", "run_cancelled", "stream_end",
   ].forEach((type) => es.addEventListener(type, handle(type)));
+  es.addEventListener("open", () => {
+    if (state.run) state.run.streamLost = false;
+    updateStreamBanner();
+  });
   es.addEventListener("error", () => {
     if (state.run && (state.run.status === "running" || state.run.status === "queued")) {
-      /* transient network hiccup: EventSource reconnects on its own */
+      state.run.streamLost = true;
+      updateStreamBanner();
     }
   });
   startTimer();
@@ -348,8 +359,9 @@ function updateTimer() {
 
 function pushLog(line) {
   if (!state.run) return;
-  state.run.logs.push(line);
-  if (state.run.logs.length > 600) state.run.logs.shift();
+  const text = String(line);
+  state.run.logs.push(text.length > 400 ? `${text.slice(0, 400)}…` : text);
+  if (state.run.logs.length > 400) state.run.logs.shift();
   const consoleNode = $("#run-console");
   if (consoleNode) {
     consoleNode.textContent = state.run.logs.join("\n");
@@ -451,7 +463,7 @@ function handleRunEvent(type, data) {
       const index = runTaskIndexByName(data.task || "");
       const target = index >= 0 ? run.tasks[index] : null;
       if (target) {
-        target.tools.push({ name: data.tool, args: data.args, output: "", done: false, failed: false });
+        target.tools.push({ name: data.tool, args: String(data.args || "").slice(0, 300), output: "", done: false, failed: false });
         updateTaskCard(index);
       }
       pushLog(`⚙ ${data.tool}${data.args ? " " + String(data.args).slice(0, 160) : ""}`);
@@ -591,6 +603,13 @@ function handlePermissionRequest(data) {
   setTimeout(showNextPermission, 350);
 }
 
+function updateStreamBanner() {
+  const banner = $("#stream-banner");
+  if (!banner) return;
+  const lost = Boolean(state.run && state.run.streamLost);
+  banner.classList.toggle("hidden", !lost);
+}
+
 function updatePermissionBanner() {
   const banner = $("#perm-banner");
   if (!banner) return;
@@ -689,6 +708,13 @@ function finishPermissions() {
   }
   updateRunIndicator();
   updatePermissionBanner();
+}
+
+function reconnectStream() {
+  if (!state.run?.id) return;
+  state.run.streamLost = false;
+  attachRun(state.run.id);
+  updateStreamBanner();
 }
 
 function reopenPermission() {

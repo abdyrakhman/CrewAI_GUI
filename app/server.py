@@ -435,11 +435,16 @@ class StudioHandler(BaseHTTPRequestHandler):
         except (TypeError, ValueError):
             after = 0
         try:
-            for chunk in stream_lines(self.manager, run_id, after=after):
+            self.connection.settimeout(120)
+        except OSError:
+            pass
+        try:
+            for chunk in stream_lines(self.manager, run_id, after=after, heartbeat=5.0):
                 self.wfile.write(chunk.encode("utf-8"))
                 self.wfile.flush()
-        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
-            pass
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, TimeoutError, OSError):
+            # a slow or closed tab must not produce a 500 in the log
+            self.close_connection = True
 
 
 def test_llm(model: str, env: dict[str, str]) -> dict:
