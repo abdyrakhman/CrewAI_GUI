@@ -32,7 +32,7 @@ DEFAULT_SETTINGS: dict = {
     "deepseek_api_key": "",
     "serper_api_key": "",
     "extra_env": {},
-    "live_stream": True,
+    "live_stream": False,
     "max_rpm": 0,
     "llm_timeout": 120,
     "fs_roots": [],

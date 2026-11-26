@@ -463,10 +463,10 @@ function handleRunEvent(type, data) {
       const index = runTaskIndexByName(data.task || "");
       const target = index >= 0 ? run.tasks[index] : null;
       if (target) {
-        target.tools.push({ name: data.tool, args: String(data.args || "").slice(0, 300), output: "", done: false, failed: false });
+        target.tools.push({ name: data.tool, args: data.target || "", output: "", done: false, failed: false });
         updateTaskCard(index);
       }
-      pushLog(`⚙ ${data.tool}${data.args ? " " + String(data.args).slice(0, 160) : ""}`);
+      pushLog(`⚙ ${data.agent || "Агент"}: ${data.tool}${data.target ? " — " + data.target : ""}`);
       break;
     }
     case "tool_done": {

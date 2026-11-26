@@ -1,7 +1,7 @@
 # CrewAI Studio
 
 A local desktop-style GUI for [CrewAI](https://crewai.com): build teams of AI agents,
-run them and watch model answers stream in real time — no console, no YAML, no Python
+run them and watch the agent steps in real time — no console, no YAML, no Python
 editing.
 
 ![Team builder](docs/screenshots/en/builder.png)
@@ -23,7 +23,7 @@ editing.
   Pick a role and goal, experience, character and tools are filled in. Roles are editable.
 - **Custom templates** — save a project as a template, apply it in one click, rename or delete.
 - **Per-agent limits** — max iterations and a time limit; the run log prints the effective values first.
-- **Live run** — streaming answers per task, tool calls, timing and token usage.
+- **Live run** — agent steps per task, tool calls, timing and token usage (raw model tokens are not streamed).
 - **Stop and detach** — stop at the nearest step; if the model hangs, the run is marked as
   force-stopping after 12 seconds, and Detach frees the slot immediately.
 - **History** — every run is kept with results and tokens; open it, export `.md`/`.json`, delete.

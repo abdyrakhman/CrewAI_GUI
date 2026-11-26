@@ -123,15 +123,14 @@ def main() -> int:
                 if line.startswith("event:"):
                     name = line.split(":", 1)[1].strip()
                     events.append(name)
-                    if name == "llm_chunk":
-                        chunks += 1
                     if name == "stream_end":
                         break
                 if time.time() > deadline:
                     break
         check("SSE stream ends with stream_end", events[-1:] == ["stream_end"], str(events[-5:]))
         check("SSE has task events", events.count("task_start") >= 3 and events.count("task_done") >= 3, str(events))
-        check("SSE streams llm chunks", chunks > 10, f"chunks={chunks}")
+        check("SSE carries agent steps, not raw tokens",
+              "agent_start" in events and "llm_chunk" not in events, str(events[-8:]))
 
         time.sleep(0.4)
         status, payload = request(f"/api/runs/{run_id}")
