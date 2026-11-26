@@ -38,6 +38,7 @@ DEFAULT_SETTINGS: dict = {
     "fs_roots": [],
     "allow_network_tools": [],
     "ui_language": "ru",
+    "session_ttl_hours": 12,
     "theme": "dark",
 }
 

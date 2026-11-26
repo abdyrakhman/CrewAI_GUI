@@ -116,6 +116,10 @@ async function api(path, { method = "GET", body = null } = {}) {
   } catch {
     data = { error: text || `HTTP ${response.status}` };
   }
+  if (response.status === 403 && data.password_change_required) {
+    window.location.replace("/change-password.html");
+    throw new Error(data.error || "Сначала смените пароль");
+  }
   if (response.status === 401 && (data.auth || path.startsWith("/api/"))) {
     window.location.replace("/login");
     throw new Error(data.error || "Требуется вход");
@@ -1657,6 +1661,15 @@ function renderSettings() {
                 <input type="password" id="password-current" placeholder="Текущий пароль" autocomplete="current-password" style="flex:1">
                 <input type="password" id="password-new" placeholder="Новый пароль (от 8 символов)" autocomplete="new-password" style="flex:1">
                 <button class="btn btn-sm" data-action="change-password">Сменить</button>
+              </div>
+              <div class="field" style="margin-top:14px">
+                <label>Время жизни сессии <span class="hint">сколько действует вход без повторного пароля</span></label>
+                <select data-setting="session_ttl_hours">
+                  ${[1, 8, 12, 24, 72, 168].map((hours) => `<option value="${hours}"${
+                    Number(settings.session_ttl_hours || 12) === hours ? " selected" : ""
+                  }>${hours === 1 ? "1 час" : hours < 24 ? `${hours} часов` : hours === 24 ? "1 день" : `${hours / 24} дн.`}</option>`).join("")}
+                </select>
+                <span class="hint-text">Применяется к новым входам. Смена времени не завершает текущую сессию.</span>
               </div>
             </div>
           </div>

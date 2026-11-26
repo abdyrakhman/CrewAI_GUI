@@ -104,7 +104,10 @@ app handles it for you.
 The interface is protected by a password. On first start the administrator is created as
 **admin / 123admin!** — change it in **Settings → Account**.
 
-- Sign in at `/login`; the session lives in an HttpOnly cookie for 7 days.
+- Sign in at `/login`; the session lives in an HttpOnly cookie (12 hours by default).
+- The first sign-in with the default password opens a mandatory password change screen; until it is done
+  the rest of the app and the API stay closed.
+- Session lifetime is configurable in Settings → Account (1 hour — 7 days).
 - Register another account from the link on the login page.
 - Change the password in Settings → Account (current, new, at least 8 characters).
 

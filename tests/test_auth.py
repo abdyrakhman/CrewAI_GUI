@@ -1,4 +1,4 @@
-"""Login, registration and session protection."""
+"""Login, forced password change, registration and session protection."""
 from __future__ import annotations
 
 import json
@@ -20,6 +20,7 @@ for sub in ("crews", "runs", "outputs", "uploads"):
 os.environ["CREWAI_STUDIO_DATA"] = str(DATA)
 
 from app.server import create_server  # noqa: E402
+from app.store import Store  # noqa: E402
 
 PORT = 7897
 BASE = f"http://127.0.0.1:{PORT}"
@@ -62,21 +63,17 @@ def cookie_from(header: str) -> str:
 
 
 def main() -> int:
+    store_settings = {"session_ttl_hours": 3}
     server = create_server("127.0.0.1", PORT)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     time.sleep(0.6)
 
     try:
         status, payload, _ = call("/api/auth/state")
-        check("first run reports no users then admin is seeded", status == 200 and payload.get("has_users") is True,
-              str(payload)[:120])
+        check("admin is seeded on first run", status == 200 and payload.get("has_users") is True, str(payload)[:120])
 
         status, payload, _ = call("/api/info")
         check("API is closed without a session", status == 401, f"{status} {str(payload)[:80]}")
-
-        status, payload, headers = call("/")
-        check("page redirects to /login", status == 200 and "login" in str(payload).lower(),
-              f"{status} {str(payload)[:80]}")
 
         status, payload, _ = call("/login")
         check("login page is public", status == 200 and "CrewAI Studio" in str(payload), str(status))
@@ -85,12 +82,33 @@ def main() -> int:
         check("wrong password is rejected", status == 401, f"{status} {str(payload)[:80]}")
 
         status, payload, set_cookie = call("/api/auth/login", "POST", {"username": "admin", "password": "123admin!"})
-        check("default admin can sign in", status == 200 and payload.get("user") == "admin", str(payload)[:120])
+        check("default admin signs in", status == 200 and payload.get("user") == "admin", str(payload)[:120])
+        check("first login demands a new password", payload.get("must_change") is True, str(payload)[:120])
         check("login sets a session cookie", "studio_session=" in set_cookie, set_cookie[:80])
         cookie = cookie_from(set_cookie)
 
         status, payload, _ = call("/api/info", cookie=cookie)
-        check("session opens the API", status == 200 and payload.get("app"), str(status))
+        check("API blocked until the password is changed",
+              status == 403 and payload.get("password_change_required") is True, f"{status} {str(payload)[:100]}")
+
+        status, payload, _ = call("/", cookie=cookie)
+        check("page redirects to the password screen", "CrewAI Studio" in str(payload) and "Смените пароль" in str(payload),
+              str(payload)[:100])
+
+        status, payload, _ = call(
+            "/api/auth/password", "POST", {"current": "123admin!", "new": "newpass123"}, cookie=cookie
+        )
+        check("password change is accepted", status == 200, f"{status} {str(payload)[:80]}")
+
+        status, payload, _ = call("/api/info", cookie=cookie)
+        check("API opens after the change", status == 200 and payload.get("app"), str(status))
+
+        status, payload, _ = call("/api/auth/login", "POST", {"username": "admin", "password": "123admin!"})
+        check("old password stops working", status == 401, str(status))
+        status, payload, set_cookie = call("/api/auth/login", "POST", {"username": "admin", "password": "newpass123"})
+        check("new password works", status == 200, str(payload)[:80])
+        check("second login has no forced change", payload.get("must_change") is False, str(payload)[:80])
+        cookie = cookie_from(set_cookie)
 
         status, payload, set_cookie = call("/api/auth/register", "POST", {"username": "tester", "password": "testpass123"})
         check("registration creates an account", status == 201 and payload.get("user") == "tester", str(payload)[:120])
@@ -100,19 +118,11 @@ def main() -> int:
 
         status, payload, _ = call("/api/auth/register", "POST", {"username": "tester", "password": "testpass123"})
         check("duplicate registration is rejected", status == 400, f"{status} {str(payload)[:80]}")
-
         status, payload, _ = call("/api/auth/register", "POST", {"username": "x", "password": "123"})
         check("weak registration is rejected", status == 400, f"{status} {str(payload)[:80]}")
 
-        status, payload, set_cookie = call(
-            "/api/auth/password", "POST", {"current": "123admin!", "new": "newpass123"}, cookie=cookie
-        )
-        check("password can be changed", status == 200, f"{status} {str(payload)[:80]}")
-        status, payload, _ = call("/api/auth/login", "POST", {"username": "admin", "password": "123admin!"})
-        check("old password stops working", status == 401, str(status))
-        status, payload, _ = call("/api/auth/login", "POST", {"username": "admin", "password": "newpass123"})
-        check("new password works", status == 200, str(payload)[:80])
-        call("/api/auth/password", "POST", {"current": "newpass123", "new": "123admin!"}, cookie=cookie)
+        ttl = Store().get_settings().get("session_ttl_hours")
+        check("session lifetime setting exists", ttl == 12, str(ttl))
 
         status, payload, set_cookie = call("/api/auth/logout", "POST", {}, cookie=cookie)
         check("logout clears the cookie", status == 200 and "Max-Age=0" in set_cookie, set_cookie[:80])

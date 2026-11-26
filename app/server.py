@@ -232,7 +232,7 @@ class StudioHandler(BaseHTTPRequestHandler):
             if method == "GET" and path == "/login":
                 self._serve_web("login.html")
                 return
-            if method == "GET" and path in {"/login.js", "/login.css"}:
+            if method == "GET" and path in {"/login.js", "/login.css", "/change-password.html", "/change-password.js"}:
                 self._serve_web(path.lstrip("/"))
                 return
             if method == "GET" and path.startswith("/static/"):
@@ -249,6 +249,15 @@ class StudioHandler(BaseHTTPRequestHandler):
                     self._error(401, "Требуется вход", auth=True)
                 else:
                     self._redirect("/login")
+                return
+            if auth.must_change(user):
+                if path.startswith("/api/"):
+                    self._send_json(403, {
+                        "error": "Сначала смените пароль",
+                        "password_change_required": True,
+                    })
+                else:
+                    self._redirect("/change-password.html")
                 return
 
             if method == "GET" and not path.startswith("/api/"):
@@ -287,10 +296,17 @@ class StudioHandler(BaseHTTPRequestHandler):
             self.send_header(header, value)
         self.end_headers()
 
-    def _set_session_cookie(self, token: str) -> None:
+    def _set_session_cookie(self, token: str, ttl_hours: float) -> None:
+        seconds = int(max(1.0, float(ttl_hours)) * 3600)
         self._session_cookie = (
-            f"{auth.COOKIE_NAME}={token}; Path=/; HttpOnly; SameSite=Lax; Max-Age={auth.SESSION_TTL}"
+            f"{auth.COOKIE_NAME}={token}; Path=/; HttpOnly; SameSite=Lax; Max-Age={seconds}"
         )
+
+    def _session_ttl(self) -> float:
+        try:
+            return float(self.store.get_settings().get("session_ttl_hours", auth.DEFAULT_TTL_HOURS))
+        except (TypeError, ValueError):
+            return auth.DEFAULT_TTL_HOURS
 
     def _handle_auth(self, method: str, path: str) -> bool:
         store = self.store
@@ -307,9 +323,14 @@ class StudioHandler(BaseHTTPRequestHandler):
             if not record or not auth.verify_password(password, record):
                 self._error(401, "Неверный логин или пароль")
                 return True
-            token = auth.create_session(username)
-            self._set_session_cookie(token)
-            self._send_json(200, {"user": username, "role": record.get("role", "user")})
+            ttl = self._session_ttl()
+            token = auth.create_session(username, ttl)
+            self._set_session_cookie(token, ttl)
+            self._send_json(200, {
+                "user": username,
+                "role": record.get("role", "user"),
+                "must_change": auth.must_change(username),
+            })
             return True
 
         if path == "/api/auth/register" and method == "POST":
@@ -322,9 +343,10 @@ class StudioHandler(BaseHTTPRequestHandler):
             except ValueError as exc:
                 self._error(400, str(exc))
                 return True
-            token = auth.create_session(created["username"])
-            self._set_session_cookie(token)
-            self._send_json(201, {"user": created["username"], "role": created["role"]})
+            ttl = self._session_ttl()
+            token = auth.create_session(created["username"], ttl)
+            self._set_session_cookie(token, ttl)
+            self._send_json(201, {"user": created["username"], "role": created["role"], "must_change": False})
             return True
 
         if path == "/api/auth/logout" and method == "POST":

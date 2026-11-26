@@ -310,6 +310,12 @@ class Store:
             for key, value in (patch or {}).items():
                 if key not in DEFAULT_SETTINGS or key in {"secret_flags", "env_flags"}:
                     continue
+                if key == "session_ttl_hours":
+                    try:
+                        current[key] = max(1, min(int(float(value)), 720))
+                    except (TypeError, ValueError):
+                        pass
+                    continue
                 if key == "extra_env":
                     if not isinstance(value, dict):
                         continue
