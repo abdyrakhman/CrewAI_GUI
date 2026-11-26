@@ -354,6 +354,9 @@ function bindGlobalEvents() {
         }
         break;
       }
+      case "reconnect-stream":
+        reconnectStream();
+        break;
       case "show-permission":
         reopenPermission();
         break;
