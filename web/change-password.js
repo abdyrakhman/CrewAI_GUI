@@ -10,7 +10,7 @@
     errorBox.classList.remove("hidden");
   }
 
-  submit.addEventListener("click", async () => {
+  async function save() {
     errorBox.classList.add("hidden");
     const currentValue = current.value;
     const nextValue = next.value;
@@ -38,5 +38,10 @@
       showError(error.message);
       submit.disabled = false;
     }
+  }
+
+  document.getElementById("password-form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    save();
   });
 })();

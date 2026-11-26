@@ -15,7 +15,12 @@ echo.
 
 set "PYLAUNCH="
 where py >nul 2>nul
-if not errorlevel 1 set "PYLAUNCH=py -3"
+if not errorlevel 1 set "PYLAUNCH=py -3.12"
+if defined PYLAUNCH %PYLAUNCH% --version >nul 2>nul || set "PYLAUNCH="
+if not defined PYLAUNCH (
+  where py >nul 2>nul
+  if not errorlevel 1 set "PYLAUNCH=py -3"
+)
 if not defined PYLAUNCH set "PYLAUNCH=python"
 
 %PYLAUNCH% --version >nul 2>nul
@@ -36,7 +41,7 @@ exit /b 0
 
 :nopython
 echo.
-echo  [ERROR] Python 3.10-3.13 was not found.
+echo  [ERROR] Python 3.12 was not found.
 echo          Install it from https://www.python.org/downloads/
 echo          and tick "Add python.exe to PATH" during setup.
 pause

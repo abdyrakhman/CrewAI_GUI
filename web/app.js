@@ -116,6 +116,13 @@ async function api(path, { method = "GET", body = null } = {}) {
   } catch {
     data = { error: text || `HTTP ${response.status}` };
   }
+  if (response.status === 403 && /токен/i.test(data.error || "")) {
+    if (!sessionStorage.getItem("studio-reloaded")) {
+      sessionStorage.setItem("studio-reloaded", "1");
+      window.location.reload();
+      throw new Error("Сессия обновляется");
+    }
+  }
   if (response.status === 403 && data.password_change_required) {
     window.location.replace("/change-password.html");
     throw new Error(data.error || "Сначала смените пароль");
@@ -124,6 +131,7 @@ async function api(path, { method = "GET", body = null } = {}) {
     window.location.replace("/login");
     throw new Error(data.error || "Требуется вход");
   }
+  sessionStorage.removeItem("studio-reloaded");
   if (!response.ok) {
     const message =
       response.status === 403
@@ -1658,6 +1666,7 @@ function renderSettings() {
                   <p class="hint-text" style="margin:2px 0 0">Вход в интерфейс защищён паролем</p>
                 </div>
                 <button class="btn btn-ghost btn-sm" data-action="logout">${icon("back", 14)} Выйти</button>
+                <button class="btn btn-ghost btn-sm" data-action="logout-all">Выйти везде</button>
               </div>
               <div class="row" style="gap:8px;margin-top:12px">
                 <input type="password" id="password-current" placeholder="Текущий пароль" autocomplete="current-password" style="flex:1">
@@ -3243,6 +3252,15 @@ function bindGlobalEvents() {
         } catch (error) {
           toast(error.message, "err");
         }
+        break;
+      }
+      case "logout-all": {
+        try {
+          await api("/api/auth/logout-all", { method: "POST" });
+        } catch (error) {
+          /* ignore and go to the login page anyway */
+        }
+        window.location.replace("/login");
         break;
       }
       case "logout": {

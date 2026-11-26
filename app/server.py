@@ -134,6 +134,9 @@ class StudioHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", "application/json; charset=utf-8")
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
+        retry_after = getattr(self, "_retry_after", "")
+        if retry_after:
+            self.send_header("Retry-After", retry_after)
         request_id = getattr(self, "request_id", "")
         if request_id:
             self.send_header("X-Request-Id", request_id)
@@ -316,13 +319,21 @@ class StudioHandler(BaseHTTPRequestHandler):
             return True
 
         if path == "/api/auth/login" and method == "POST":
+            ip = self.client_address[0] if self.client_address else "?"
+            wait = _login_blocked(ip)
+            if wait:
+                self._retry_after = str(int(wait))
+                self._error(429, f"Слишком много попыток входа. Повторите через {int(wait // 60) + 1} мин.")
+                return True
             payload = self._read_json()
             username = str(payload.get("username") or "").strip()
             password = str(payload.get("password") or "")
             record = auth.get_user(username)
             if not record or not auth.verify_password(password, record):
+                _login_failed(ip)
                 self._error(401, "Неверный логин или пароль")
                 return True
+            _login_succeeded(ip)
             ttl = self._session_ttl()
             token = auth.create_session(username, ttl)
             self._set_session_cookie(token, ttl)
@@ -370,7 +381,19 @@ class StudioHandler(BaseHTTPRequestHandler):
             except ValueError as exc:
                 self._error(400, str(exc))
                 return True
-            self._send_json(200, {"ok": True})
+            dropped = auth.drop_user_sessions(username, keep_token=token)
+            self._send_json(200, {"ok": True, "dropped_sessions": dropped})
+            return True
+
+        if path == "/api/auth/logout-all" and method == "POST":
+            token = auth.cookie_value(self.headers.get("Cookie", ""))
+            username = auth.session_user(token)
+            if not username:
+                self._error(401, "Требуется вход", auth=True)
+                return True
+            removed = auth.drop_user_sessions(username)
+            self._session_cookie = f"{auth.COOKIE_NAME}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0"
+            self._send_json(200, {"ok": True, "dropped_sessions": removed})
             return True
 
         if path == "/api/auth/me" and method == "GET":
@@ -926,6 +949,33 @@ def find_free_port(preferred: int, host: str) -> int:
             except OSError:
                 continue
     raise RuntimeError("Не удалось найти свободный порт")
+
+
+_LOGIN_LOCK = threading.Lock()
+_LOGIN_ATTEMPTS: dict[str, list[float]] = {}
+LOGIN_MAX_FAILURES = 5
+LOGIN_WINDOW = 600.0
+
+
+def _login_blocked(ip: str) -> float:
+    """Seconds to wait before another attempt, or 0 when allowed."""
+    now = time.time()
+    with _LOGIN_LOCK:
+        attempts = [stamp for stamp in _LOGIN_ATTEMPTS.get(ip, []) if now - stamp < LOGIN_WINDOW]
+        _LOGIN_ATTEMPTS[ip] = attempts
+        if len(attempts) >= LOGIN_MAX_FAILURES:
+            return max(1.0, LOGIN_WINDOW - (now - attempts[0]))
+    return 0.0
+
+
+def _login_failed(ip: str) -> None:
+    with _LOGIN_LOCK:
+        _LOGIN_ATTEMPTS.setdefault(ip, []).append(time.time())
+
+
+def _login_succeeded(ip: str) -> None:
+    with _LOGIN_LOCK:
+        _LOGIN_ATTEMPTS.pop(ip, None)
 
 
 class StudioServer(ThreadingHTTPServer):

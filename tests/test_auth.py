@@ -110,6 +110,37 @@ def main() -> int:
         check("second login has no forced change", payload.get("must_change") is False, str(payload)[:80])
         cookie = cookie_from(set_cookie)
 
+        # a second session must die when the password changes
+        status, payload, set_cookie2 = call(
+            "/api/auth/login", "POST", {"username": "admin", "password": "newpass123"}
+        )
+        other = cookie_from(set_cookie2)
+        status, payload, _ = call(
+            "/api/auth/password", "POST", {"current": "newpass123", "new": "thirdpass123"}, cookie=cookie
+        )
+        check("password change reports dropped sessions", status == 200 and payload.get("dropped_sessions") >= 1,
+              str(payload)[:100])
+        status, payload, _ = call("/api/auth/me", cookie=other)
+        check("other session is dropped after password change", status == 401, str(status))
+        status, payload, _ = call("/api/auth/me", cookie=cookie)
+        check("current session survives password change", status == 200, str(status))
+
+        status, payload, _ = call("/api/auth/logout-all", "POST", {}, cookie=cookie)
+        check("logout everywhere is accepted", status == 200 and payload.get("ok") is True, str(payload)[:100])
+        status, payload, _ = call("/api/auth/me", cookie=cookie)
+        check("logout everywhere drops the current session too", status == 401, str(status))
+
+        status, payload, set_cookie = call(
+            "/api/auth/login", "POST", {"username": "admin", "password": "thirdpass123"}
+        )
+        cookie = cookie_from(set_cookie)
+        check("login works after logout everywhere", status == 200, str(payload)[:80])
+
+        for attempt in range(5):
+            call("/api/auth/login", "POST", {"username": "admin", "password": "nope"})
+        status, payload, _ = call("/api/auth/login", "POST", {"username": "admin", "password": "nope"})
+        check("brute force is rate limited", status == 429, f"{status} {str(payload)[:100]}")
+
         status, payload, set_cookie = call("/api/auth/register", "POST", {"username": "tester", "password": "testpass123"})
         check("registration creates an account", status == 201 and payload.get("user") == "tester", str(payload)[:120])
         tester_cookie = cookie_from(set_cookie)
