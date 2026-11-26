@@ -572,6 +572,12 @@ function bindGlobalEvents() {
     if (event.target.id !== "file-input") return;
     const file = event.target.files?.[0];
     if (!file) return;
+    const limitMb = 16;
+    if (file.size > limitMb * 1024 * 1024) {
+      toast(`Файл больше ${limitMb} МБ — уменьшите его или загрузите частями`, "err");
+      event.target.value = "";
+      return;
+    }
     const reader = new FileReader();
     reader.onload = async () => {
       try {

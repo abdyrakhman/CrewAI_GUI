@@ -11,6 +11,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 MAX_BODY = 64 * 1024 * 1024
+MAX_UPLOAD = 16 * 1024 * 1024  # one uploaded file; the JSON body is larger
 SECURITY_HEADERS = {
     "X-Content-Type-Options": "nosniff",
     "Referrer-Policy": "no-referrer",

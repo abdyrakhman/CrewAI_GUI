@@ -359,6 +359,40 @@ def main() -> int:
         check("SSE carries event ids", "id: 2" in chunk, chunk[:160])
         check("SSE resumes after Last-Event-ID", '"message": "первое"' not in chunk, chunk[:200])
         conn.close()
+
+        # single instance guard
+        from app import config, instance
+
+        lock_path = config.DATA_DIR / ".test-instance.lock"
+        first = instance.acquire(lock_path)
+        check("instance lock is acquired", first is not None)
+        second = instance.acquire(lock_path)
+        check("second instance is refused", second is None)
+        instance.release(first)
+        third = instance.acquire(lock_path)
+        check("lock can be reacquired after release", third is not None)
+        instance.release(third)
+
+        # one uploaded file may not exceed the ceiling
+        import base64
+
+        from app import security
+
+        original_limit = security.MAX_UPLOAD
+        security.MAX_UPLOAD = 64
+        try:
+            status, payload, _ = raw_request(
+                "/api/files", method="POST",
+                body={"name": "big.txt", "data": base64.b64encode(b"x" * 500).decode()},
+            )
+            check("oversized upload is rejected", status == 413, f"{status} {str(payload)[:100]}")
+            status, payload, _ = raw_request(
+                "/api/files", method="POST",
+                body={"name": "small.txt", "data": base64.b64encode(b"ok").decode()},
+            )
+            check("small upload is accepted", status in {200, 201}, f"{status} {str(payload)[:100]}")
+        finally:
+            security.MAX_UPLOAD = original_limit
     finally:
         server.shutdown()
         server.server_close()

@@ -9,7 +9,7 @@ from __future__ import annotations
 import argparse
 import sys
 
-from app import config
+from app import config, instance
 from app.server import serve
 
 
@@ -30,9 +30,18 @@ def main() -> int:
     print(f"\n  {config.APP_NAME} v{config.APP_VERSION}")
     print(f"  Проект: {config.ROOT}")
     if args.host not in {"127.0.0.1", "localhost", "::1"}:
-        print("  Отказ: интерфейс без пароля слушает только 127.0.0.1. Удалённый доступ не поддерживается.")
+        print("  Отказ: интерфейс с паролем слушает только 127.0.0.1. Удалённый доступ не поддерживается.")
         return 2
-    serve(host=args.host, port=args.port, open_browser=not args.no_browser)
+
+    lock = instance.acquire(config.DATA_DIR / ".studio.lock")
+    if lock is None:
+        print("  Отказ: приложение уже запущено и использует эту папку data (data/.studio.lock).")
+        print("  Закройте другой экземпляр или укажите отдельную папку данных.")
+        return 3
+    try:
+        serve(host=args.host, port=args.port, open_browser=not args.no_browser)
+    finally:
+        instance.release(lock)
     return 0
 
 

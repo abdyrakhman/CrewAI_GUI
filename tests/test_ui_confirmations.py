@@ -112,8 +112,8 @@ def main() -> int:
             page.screenshot(path=str(SHOTS / "ui-permission.png"))
 
             # the prompt can be dismissed and reopened without losing the request
-            page.click('.modal-head [data-action="close-modal"]')
-            page.wait_for_timeout(200)
+            page.keyboard.press("Escape")
+            page.wait_for_timeout(250)
             check("closing the prompt shows the banner", page.locator("#perm-banner").is_visible())
             check("banner names the target", "report.md" in page.locator("#perm-banner-text").inner_text())
             page.click('[data-action="show-permission"]')
