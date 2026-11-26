@@ -83,7 +83,7 @@ def get_user(username: str) -> dict | None:
     return load_users().get(username)
 
 
-def create_user(username: str, password: str, role: str = "user", must_change: bool = False) -> dict:
+def create_user(username: str, password: str, must_change: bool = False) -> dict:
     username = str(username or "").strip()
     password = str(password or "")
     if not USERNAME_RE.match(username):
@@ -100,17 +100,29 @@ def create_user(username: str, password: str, role: str = "user", must_change: b
             "username": username,
             "password_hash": digest,
             "salt": salt,
-            "role": role if role in {"admin", "user"} else "user",
             "must_change": must_change,
             "created_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
         }
         save_users(users)
-        return {k: users[username][k] for k in ("username", "role", "created_at")}
+        return {k: users[username][k] for k in ("username", "created_at")}
 
 
 def must_change(username: str) -> bool:
     record = get_user(username) or {}
     return bool(record.get("must_change"))
+
+
+def migrate_roles() -> None:
+    """Accounts no longer have roles: drop the field from older files."""
+    with _lock:
+        users = dict(load_users())
+        changed = False
+        for record in users.values():
+            if "role" in record:
+                record.pop("role", None)
+                changed = True
+        if changed:
+            save_users(users)
 
 
 def migrate_must_change() -> None:
@@ -129,12 +141,13 @@ def migrate_must_change() -> None:
 def ensure_default_admin() -> str | None:
     """Create the first administrator when no accounts exist yet."""
     if has_users():
+        migrate_roles()
         migrate_must_change()
         return None
     username = os.environ.get("CREWAI_STUDIO_ADMIN_USER", DEFAULT_ADMIN[0])
     password = os.environ.get("CREWAI_STUDIO_ADMIN_PASSWORD", DEFAULT_ADMIN[1])
     try:
-        create_user(username, password, role="admin", must_change=True)
+        create_user(username, password, must_change=True)
         return username
     except ValueError:
         return None

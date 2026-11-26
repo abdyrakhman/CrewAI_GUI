@@ -354,6 +354,15 @@ function bindGlobalEvents() {
         }
         break;
       }
+      case "export-crew":
+        if (state.crew?.id) window.location.href = `/api/crews/${state.crew.id}/export`;
+        break;
+      case "import-crew":
+        $("#import-file")?.click();
+        break;
+      case "backup":
+        window.location.href = trigger.dataset.runs === "1" ? "/api/backup?runs=1" : "/api/backup";
+        break;
       case "history-prev":
         await refreshHistory(historyPage.offset - historyPage.limit);
         break;
@@ -494,6 +503,24 @@ function bindGlobalEvents() {
       state.settings = { ...(state.settings || {}), ui_language: chosen };
       StudioI18n.setLang(chosen);
       await saveSettings(chosen);
+      return;
+    }
+    if (node.id === "import-file") {
+      const file = node.files && node.files[0];
+      node.value = "";
+      if (!file) return;
+      try {
+        const parsed = JSON.parse(await file.text());
+        const data = await api("/api/crews/import", {
+          method: "POST",
+          body: { crew: parsed.crew || parsed },
+        });
+        await refreshCrews();
+        await openCrew(data.crew.id);
+        toast("Проект импортирован", "ok");
+      } catch (error) {
+        toast(`Не удалось импортировать: ${error.message}`, "err");
+      }
       return;
     }
     if (node.id === "history-status") {

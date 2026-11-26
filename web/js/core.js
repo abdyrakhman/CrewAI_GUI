@@ -463,7 +463,8 @@ function renderTopbar() {
         ${state.templateEdit
           ? `<button class="btn btn-ghost btn-sm" data-action="cancel-template-edit">${icon("back")} Отмена</button>
              <button class="btn btn-primary" data-action="save-template-crew">${icon("save")} Сохранить шаблон</button>`
-          : `<button class="btn btn-ghost btn-sm" data-action="save-as-template">${icon("spark")} В шаблон</button>
+          : `<button class="btn btn-ghost btn-sm" data-action="export-crew">${icon("download")} Экспорт</button>
+             <button class="btn btn-ghost btn-sm" data-action="save-as-template">${icon("spark")} В шаблон</button>
              <button class="btn btn-ghost btn-sm" data-action="show-code">${icon("code")} Код</button>
              <button class="btn btn-ghost btn-sm" data-action="duplicate-crew">${icon("copy")} Дублировать</button>
              <button class="btn btn-primary" data-action="run-crew">${icon("play")} Запустить</button>`}

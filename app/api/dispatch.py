@@ -4,6 +4,7 @@ from __future__ import annotations
 import base64
 import json
 import re
+import time
 import urllib.parse
 import urllib.request
 import uuid
@@ -11,6 +12,7 @@ import uuid
 from .. import auth, config, observability, roles, security, templates, tools as tool_registry, workspace
 from ..runner import BusyError, RunManager, crewai_status, stream_lines
 from ..spec import inputs_payload, normalize_crew, resolve_llm, to_python, validate_crew
+from ..backup import build_zip
 from ..store import as_jsonable
 
 
@@ -154,6 +156,47 @@ def handle(api, method: str, path: str, query: dict[str, list[str]]) -> bool:
             crew = normalize_crew(payload.get("crew") or {}, rejected)
         saved = api.store.save_crew(crew)
         api._send_json(201, {"crew": saved, "rejected": locals().get("rejected", [])})
+        return True
+
+    if path == "/api/crews/import" and method == "POST":
+        payload = api._read_json()
+        source = payload.get("crew") if isinstance(payload.get("crew"), dict) else payload
+        if not isinstance(source, dict) or not source.get("agents"):
+            api._error(400, "Файл проекта пуст или повреждён: нет агентов")
+            return True
+        rejected: list[dict] = []
+        crew = normalize_crew(source, rejected)
+        for field in ("id", "created_at", "updated_at"):
+            crew.pop(field, None)
+        crew["workspace"] = ""
+        saved = api.store.save_crew(crew)
+        api._send_json(201, {"crew": saved, "rejected": rejected})
+        return True
+
+    match = re.fullmatch(r"/api/crews/([\w-]+)/export", path)
+    if match and method == "GET":
+        crew = api.store.get_crew(match.group(1))
+        if not crew:
+            api._error(404, "Проект не найден")
+            return True
+        document = {
+            "format": "crewai-studio-project",
+            "version": 1,
+            "exported_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            "crew": crew,
+        }
+        body = json.dumps(as_jsonable(document), ensure_ascii=False, indent=2).encode("utf-8")
+        api._send_download(f"project-{crew['id']}.json", body, "application/json; charset=utf-8")
+        return True
+
+    if path == "/api/backup" and method == "GET":
+        include_runs = (query.get("runs") or ["0"])[0] in {"1", "true", "yes"}
+        body = build_zip(include_runs)
+        api._send_download(
+            f"crewai-studio-backup-{time.strftime('%Y%m%d-%H%M')}.zip",
+            body,
+            "application/zip",
+        )
         return True
 
     match = re.fullmatch(r"/api/crews/([\w-]+)", path)

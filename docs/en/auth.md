@@ -37,12 +37,12 @@ machine should not see your projects or change your settings.
 - After 5 failed sign-ins from one address, sign-in is blocked for 10 minutes (`429` with `Retry-After`).
 - A successful sign-in resets the counter.
 
-## Registration and roles
+## Registration
 
 - **Register** on `/login`: login 3–32 characters (`A–Z`, `a–z`, digits, `.`, `_`, `-`), password 8+.
 - A registered user is signed in automatically.
-- The role (`admin` / `user`) is stored in `data/users.json`, but permissions are not separated yet:
-  every signed-in user sees the same app. This is a known limitation.
+- All accounts are equal: there are no roles and no permission split. The first administrator exists
+  only for the initial setup and password change.
 
 ## Forgot the password
 
@@ -63,6 +63,7 @@ This resets **all** accounts. There is no other recovery: passwords are stored i
 
 Public (no session): `GET /api/auth/state`, `POST /api/auth/login`, `POST /api/auth/register`,
 `POST /api/auth/logout`, `POST /api/auth/logout-all`, `GET /api/auth/me`, `POST /api/auth/password`.
+Sign-in and registration return only `{user, must_change}` — no role.
 
 Every other `/api/*` call needs a session: otherwise `401 {"auth": true}`, and while the password change
 is pending `403 {"password_change_required": true}`. See [api.md](api.md).

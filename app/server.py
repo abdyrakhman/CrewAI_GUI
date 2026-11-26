@@ -150,6 +150,18 @@ class StudioHandler(BaseHTTPRequestHandler):
         except (BrokenPipeError, ConnectionResetError):
             pass
 
+    def _send_download(self, filename: str, body: bytes, content_type: str) -> None:
+        self._last_status = 200
+        self.send_response(200)
+        for header, value in security.SECURITY_HEADERS.items():
+            self.send_header(header, value)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Content-Disposition", f'attachment; filename="{filename}"')
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(body)
+
     def _error(self, status: int, message: str, **extra: Any) -> None:
         self._send_json(status, {"error": message, **extra})
 
@@ -340,7 +352,6 @@ class StudioHandler(BaseHTTPRequestHandler):
             self._set_session_cookie(token, ttl)
             self._send_json(200, {
                 "user": username,
-                "role": record.get("role", "user"),
                 "must_change": auth.must_change(username),
             })
             return True
@@ -350,15 +361,14 @@ class StudioHandler(BaseHTTPRequestHandler):
             username = str(payload.get("username") or "").strip()
             password = str(payload.get("password") or "")
             try:
-                role = "admin" if not auth.has_users() else "user"
-                created = auth.create_user(username, password, role=role)
+                created = auth.create_user(username, password)
             except ValueError as exc:
                 self._error(400, str(exc))
                 return True
             ttl = self._session_ttl()
             token = auth.create_session(created["username"], ttl)
             self._set_session_cookie(token, ttl)
-            self._send_json(201, {"user": created["username"], "role": created["role"], "must_change": False})
+            self._send_json(201, {"user": created["username"], "must_change": False})
             return True
 
         if path == "/api/auth/logout" and method == "POST":

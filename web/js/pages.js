@@ -607,6 +607,18 @@ function renderSettings() {
 
           <div class="card">
             <div class="card">
+            <div class="card-head"><h2>Резервная копия</h2></div>
+            <div class="card-body">
+              <p class="hint-text" style="margin:0 0 10px">Архив с проектами, ролями, шаблонами, настройками и аккаунтами.
+                Логи и сессии не входят. Ключи API остаются зашифрованными и привязаны к этой машине.</p>
+              <div class="row-wrap" style="gap:8px">
+                <button class="btn" data-action="backup">${icon("download", 15)} Скачать .zip</button>
+                <button class="btn btn-ghost btn-sm" data-action="backup" data-runs="1">с историей запусков</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
             <div class="card-head"><h2>История запусков</h2></div>
             <div class="card-body">
               <div class="field">
