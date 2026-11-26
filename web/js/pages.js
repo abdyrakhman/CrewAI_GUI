@@ -666,6 +666,26 @@ function renderSettings() {
           </div>
 
           <div class="card">
+            <div class="card-head"><h2>Запуск</h2></div>
+            <div class="card-body">
+              <div class="field">
+                <label>Лимит времени запуска</label>
+                <select data-setting="run_timeout_minutes">
+                  ${[[15, "15 минут"], [30, "30 минут"], [60, "1 час"], [120, "2 часа"], [180, "3 часа"], [0, "Без ограничения"]]
+                    .map(([minutes, label]) => `<option value="${minutes}"${Number(settings.run_timeout_minutes ?? 60) === minutes ? " selected" : ""}>${label}</option>`)
+                    .join("")}
+                </select>
+                <span class="hint-text">По достижении лимита запуск останавливается, в событиях появляется предупреждение.</span>
+              </div>
+              <div class="field">
+                <label>Лимит итераций агента</label>
+                <input type="number" min="1" max="100" data-setting="max_iter_cap" value="${esc(String(settings.max_iter_cap ?? 20))}">
+                <span class="hint-text">Даже если у агента задано больше, при запуске будет использовано это значение (1–100).</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
             <div class="card-head"><h2>Модели по умолчанию</h2></div>
             <div class="card-body">
               <div class="field">

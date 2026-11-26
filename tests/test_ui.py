@@ -149,6 +149,22 @@ def main() -> int:
                 check(f"view «{view}» renders", page.locator(marker).count() > 0)
             page.screenshot(path=str(SHOTS / "ui-settings.png"))
 
+            # run limits and diagnostics are reachable from settings
+            page.wait_for_selector('[data-setting="run_timeout_minutes"]', timeout=15000)
+            page.select_option('[data-setting="run_timeout_minutes"]', "30")
+            page.fill('[data-setting="max_iter_cap"]', "7")
+            page.click('[data-action="save-settings"]')
+            page.wait_for_timeout(1200)
+            saved = page.evaluate("() => fetch('/api/settings').then((r) => r.json())")
+            settings_now = (saved or {}).get("settings", {})
+            check(
+                "run limits card exists and saves",
+                int(float(settings_now.get("run_timeout_minutes") or 0)) == 30
+                and int(float(settings_now.get("max_iter_cap") or 0)) == 7,
+                f"{settings_now.get('run_timeout_minutes')}/{settings_now.get('max_iter_cap')}",
+            )
+            check("diagnostics card is present", page.locator('[data-action="show-errors"]').count() == 1)
+
             # 6. export and code preview endpoints through the UI helpers
             page.goto(f"{BASE}/#view=history", wait_until="domcontentloaded")
             page.wait_for_selector('[data-action="open-run"]', timeout=15000)
