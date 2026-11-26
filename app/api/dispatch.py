@@ -193,6 +193,16 @@ def handle(api, method: str, path: str, query: dict[str, list[str]]) -> bool:
         api._send_download(f"project-{crew['id']}.json", body, "application/json; charset=utf-8")
         return True
 
+    if path == "/api/logs/recent" and method == "GET":
+        def _arg(name: str, default: str = "") -> str:
+            values = query.get(name) or []
+            return str(values[0]) if values else default
+
+        errors_only = _arg("errors", "") in {"1", "true", "yes"}
+        file_name, lines = observability.recent_lines(_arg("limit", "200"), errors_only)
+        api._send_json(200, {"file": file_name, "lines": lines, "count": len(lines)})
+        return True
+
     if path == "/api/backup" and method == "GET":
         include_runs = (query.get("runs") or ["0"])[0] in {"1", "true", "yes"}
         body = build_zip(include_runs)

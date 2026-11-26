@@ -82,6 +82,15 @@ const STATUS_LABEL = {
   cancelled: "остановлено",
 };
 
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(String(text));
+    toast("Скопировано", "ok");
+  } catch (error) {
+    toast("Не удалось скопировать", "err");
+  }
+}
+
 function toast(message, kind = "", action = null) {
   const box = document.createElement("div");
   box.className = `toast ${kind}`;
@@ -95,7 +104,16 @@ function toast(message, kind = "", action = null) {
       box.remove();
     });
   }
-  const ttl = action ? 8000 : kind === "err" ? 6000 : 3200;
+  const codeMatch = /код: ([0-9a-f]{8})/i.exec(String(message || ""));
+  if (!action && codeMatch) {
+    const code = codeMatch[1];
+    const button = document.createElement("button");
+    button.className = "btn btn-sm toast-action";
+    button.textContent = "Копировать код";
+    button.addEventListener("click", () => copyText(code));
+    box.appendChild(button);
+  }
+  const ttl = action || codeMatch ? 8000 : kind === "err" ? 6000 : 3200;
   setTimeout(() => {
     box.style.opacity = "0";
     box.style.transform = "translateY(6px)";

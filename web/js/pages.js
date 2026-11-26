@@ -53,6 +53,7 @@ function renderEmptyView() {
 /* --------------------------------------------------------------- history */
 
 let historyPage = { limit: 50, offset: 0, status: "", total: 0 };
+let logText = "";
 
 async function refreshHistory(offset = 0, status = null) {
   if (status !== null) {
@@ -557,6 +558,23 @@ function providerBlock(provider) {
     </div>`;
 }
 
+async function showLog(errorsOnly) {
+  try {
+    const data = await api(`/api/logs/recent?limit=150${errorsOnly ? "&errors=1" : ""}`);
+    logText = (data.lines || []).join("\n") || "Записей нет";
+    openModal({
+      title: errorsOnly ? "Последние ошибки" : "Последние записи журнала",
+      wide: true,
+      body: `<p class="hint-text">Файл: <span class="mono">${esc(data.file || "")}</span></p>
+             <pre style="max-height:52vh;overflow:auto;background:#0f1220;border:1px solid #232838;border-radius:10px;padding:12px;font-size:12px;white-space:pre-wrap;word-break:break-all">${esc(logText)}</pre>`,
+      footer: `<button class="btn btn-ghost" data-action="copy-log">${icon("copy", 15)} Копировать</button>
+               <button class="btn btn-primary" data-action="close-modal">Закрыть</button>`,
+    });
+  } catch (error) {
+    toast(error.message, "err");
+  }
+}
+
 function renderSettings() {
   const settings = state.settings || {};
   $("#view").innerHTML = `
@@ -634,21 +652,15 @@ function renderSettings() {
           </div>
 
           <div class="card">
-            <div class="card-head"><h2>Запуск</h2></div>
+            <div class="card-head"><h2>Диагностика</h2></div>
             <div class="card-body">
-              <div class="field">
-                <label>Лимит времени запуска</label>
-                <select data-setting="run_timeout_minutes">
-                  ${[[15, "15 минут"], [30, "30 минут"], [60, "1 час"], [120, "2 часа"], [180, "3 часа"], [0, "Без ограничения"]]
-                    .map(([minutes, label]) => `<option value="${minutes}"${Number(settings.run_timeout_minutes ?? 60) === minutes ? " selected" : ""}>${label}</option>`)
-                    .join("")}
-                </select>
-                <span class="hint-text">По достижении лимита запуск останавливается, в событиях появляется предупреждение.</span>
-              </div>
-              <div class="field">
-                <label>Лимит итераций агента</label>
-                <input type="number" min="1" max="100" data-setting="max_iter_cap" value="${esc(String(settings.max_iter_cap ?? 20))}">
-                <span class="hint-text">Даже если у агента задано больше, при запуске будет использовано это значение (1–100).</span>
+              <p class="hint-text" style="margin:0 0 10px">
+                Журнал приложения: <span class="mono">data/logs/app-YYYYMMDD.jsonl</span>. Внутренние ошибки
+                содержат <code>error_id</code> — код можно скопировать из уведомления или из журнала.
+              </p>
+              <div class="row-wrap" style="gap:8px">
+                <button class="btn" data-action="show-errors"> Последние ошибки</button>
+                <button class="btn btn-ghost btn-sm" data-action="show-log">Последние записи</button>
               </div>
             </div>
           </div>

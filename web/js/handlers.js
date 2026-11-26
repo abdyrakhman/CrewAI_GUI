@@ -360,6 +360,15 @@ function bindGlobalEvents() {
       case "show-permission":
         reopenPermission();
         break;
+      case "show-errors":
+        await showLog(true);
+        break;
+      case "show-log":
+        await showLog(false);
+        break;
+      case "copy-log":
+        await copyText(logText || "");
+        break;
       case "export-crew":
         if (state.crew?.id) window.location.href = `/api/crews/${state.crew.id}/export`;
         break;
