@@ -379,7 +379,17 @@ def handle(api, method: str, path: str, query: dict[str, list[str]]) -> bool:
 
     # --------------------------------------------------------------- runs
     if path == "/api/runs" and method == "GET":
-        api._send_json(200, {"runs": api.store.list_runs()})
+        def _arg(name: str, default: str = "") -> str:
+            values = query.get(name) or []
+            return str(values[0]) if values else default
+
+        page = api.store.runs_page(
+            limit=_arg("limit", "50"),
+            offset=_arg("offset", "0"),
+            status=_arg("status"),
+            crew_id=_arg("crew_id"),
+        )
+        api._send_json(200, page)
         return True
 
     if path == "/api/runs" and method == "POST":

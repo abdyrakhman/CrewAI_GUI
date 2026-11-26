@@ -52,23 +52,45 @@ function renderEmptyView() {
 
 /* --------------------------------------------------------------- history */
 
-async function refreshHistory() {
+let historyPage = { limit: 50, offset: 0, status: "", total: 0 };
+
+async function refreshHistory(offset = 0, status = null) {
+  if (status !== null) {
+    historyPage.status = status;
+    historyPage.offset = 0;
+  } else {
+    historyPage.offset = Math.max(0, Number(offset) || 0);
+  }
   try {
-    const data = await api("/api/runs");
+    const params = new URLSearchParams({
+      limit: String(historyPage.limit),
+      offset: String(historyPage.offset),
+    });
+    if (historyPage.status) params.set("status", historyPage.status);
+    const data = await api(`/api/runs?${params.toString()}`);
     state.runs = data.runs || [];
-    if (state.view === "history") {
-      renderHistory();
-    }
+    historyPage.total = Number(data.total || 0);
+    historyPage.offset = Number(data.offset || 0);
+    historyPage.limit = Number(data.limit || 50);
+    if (state.view === "history") renderHistory();
   } catch (error) {
     toast(error.message, "err");
   }
 }
 
 function renderHistory() {
+  const total = historyPage.total || 0;
+  const from = total ? historyPage.offset + 1 : 0;
+  const to = Math.min(historyPage.offset + state.runs.length, total);
+  const statuses = [["", "Все статусы"], ["completed", "Завершён"], ["failed", "Ошибка"], ["cancelled", "Остановлен"]];
   $("#view").innerHTML = `
     <div class="view-inner">
       <div class="card">
-        <div class="card-head"><h2>Запуски</h2><span class="spacer"></span><span class="small muted">${countLabel(state.runs.length, RECORDS)}</span></div>
+        <div class="card-head">
+          <h2>Запуски</h2>
+          <span class="spacer"></span>
+          <span class="small muted">${countLabel(total, RECORDS)}</span>
+        </div>
         ${
           state.runs.length
             ? `<table class="table">
@@ -93,6 +115,19 @@ function renderHistory() {
               .join("")}
           </tbody></table>`
             : `<div class="empty-state"><h3>Пока нет запусков</h3><p>История появится после первого запуска команды.</p></div>`
+        }
+        ${
+          total
+            ? `<div class="card-body row" style="gap:10px;align-items:center;border-top:1px solid #232838">
+                 <span class="small muted">Показано ${from}–${to} из ${total}</span>
+                 <span class="spacer grow"></span>
+                 <select id="history-status" style="max-width:170px">
+                   ${statuses.map(([value, label]) => `<option value="${value}"${historyPage.status === value ? " selected" : ""}>${label}</option>`).join("")}
+                 </select>
+                 <button class="btn btn-sm" data-action="history-prev" ${historyPage.offset <= 0 ? "disabled" : ""}>← Назад</button>
+                 <button class="btn btn-sm" data-action="history-next" ${to >= total ? "disabled" : ""}>Вперёд →</button>
+               </div>`
+            : ""
         }
       </div>
     </div>`;
@@ -566,6 +601,22 @@ function renderSettings() {
                   <option value="en"${settings.ui_language === "en" ? " selected" : ""}>English</option>
                 </select>
                 <span class="hint-text">Интерфейс перерисуется сразу после выбора. Ключи, проекты и история не меняются.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card">
+            <div class="card-head"><h2>История запусков</h2></div>
+            <div class="card-body">
+              <div class="field">
+                <label>Хранить запуски</label>
+                <select data-setting="runs_retention_days">
+                  ${[[30, "30 дней"], [90, "90 дней"], [180, "180 дней"], [365, "1 год"], [0, "Хранить всегда"]]
+                    .map(([days, label]) => `<option value="${days}"${Number(settings.runs_retention_days ?? 180) === days ? " selected" : ""}>${label}</option>`)
+                    .join("")}
+                </select>
+                <span class="hint-text">Старые запуски удаляются при следующем старте приложения. Всего хранится не больше 5000 записей.</span>
               </div>
             </div>
           </div>

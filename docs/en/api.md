@@ -146,6 +146,19 @@ An empty `path` restores the default folder.
 
 ## Runs
 
+`GET /api/runs` returns one page of history:
+
+| Parameter | Meaning |
+|---|---|
+| `limit` | 1–200, 50 by default |
+| `offset` | offset, 0 by default |
+| `status` | `completed`, `failed`, `cancelled` |
+| `crew_id` | runs of a single project |
+
+Response: `{runs, total, limit, offset}`. Old runs are removed according to `runs_retention_days`
+(180 days by default) at start-up; at most 5,000 records are kept.
+
+
 | Method | Path | Body | Response |
 |---|---|---|---|
 | `POST` | `/api/runs` | `{"crew_id":"…","inputs":{…}}` | `201 {"run_id","crew_name"}` |

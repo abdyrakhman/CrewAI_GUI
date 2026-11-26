@@ -542,6 +542,7 @@ def create_server(host: str, port: int) -> StudioServer:
     if created_admin:
         print(f"  Создан администратор «{created_admin}». Смените пароль в настройках безопасности.")
     store = Store()
+    store.prune_runs()
     manager = RunManager(store)
 
     handler = type(

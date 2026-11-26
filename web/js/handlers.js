@@ -354,6 +354,12 @@ function bindGlobalEvents() {
         }
         break;
       }
+      case "history-prev":
+        await refreshHistory(historyPage.offset - historyPage.limit);
+        break;
+      case "history-next":
+        await refreshHistory(historyPage.offset + historyPage.limit);
+        break;
       case "refresh-history":
         await refreshHistory();
         break;
@@ -488,6 +494,10 @@ function bindGlobalEvents() {
       state.settings = { ...(state.settings || {}), ui_language: chosen };
       StudioI18n.setLang(chosen);
       await saveSettings(chosen);
+      return;
+    }
+    if (node.id === "history-status") {
+      await refreshHistory(0, node.value);
       return;
     }
     if (node.id === "tpl-source") {
