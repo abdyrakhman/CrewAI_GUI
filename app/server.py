@@ -328,7 +328,15 @@ class StudioHandler(BaseHTTPRequestHandler):
         store = self.store
         if path == "/api/auth/state" and method == "GET":
             user = self._session_user()
-            self._send_json(200, {"has_users": auth.has_users(), "user": user})
+            try:
+                language = str(self.store.get_settings().get("ui_language") or "ru")
+            except Exception:  # noqa: BLE001 - settings must not break sign-in
+                language = "ru"
+            self._send_json(200, {
+                "has_users": auth.has_users(),
+                "user": user,
+                "language": "en" if language == "en" else "ru",
+            })
             return True
 
         if path == "/api/auth/login" and method == "POST":
