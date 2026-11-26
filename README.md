@@ -78,8 +78,10 @@
 | [docs/user-guide.md](docs/user-guide.md) | полное руководство: проекты, агенты, задачи, роли, шаблоны, рабочая область, запуск, подтверждения, настройки |
 | [docs/architecture.md](docs/architecture.md) | как устроено внутри: слои, модули, жизненный цикл запуска, события, хранение, политика путей |
 | [docs/api.md](docs/api.md) | REST API и SSE: эндпоинты, тела запросов, коды ошибок, пример запуска из скрипта |
+| [docs/auth.md](docs/auth.md) | вход, аккаунты, обязательная смена пароля, время жизни сессии, восстановление |
+| [docs/logging.md](docs/logging.md) | логи `data/logs`, коды ошибок, `error_id`, логи запусков, диагностика |
 | [docs/security.md](docs/security.md) | модель доверия, что закрыто, остаточные риски и рекомендации |
-| [docs/testing.md](docs/testing.md) | 15 наборов тестов: что покрывают и как запускать |
+| [docs/testing.md](docs/testing.md) | 17 наборов тестов: что покрывают и как запускать |
 | [docs/troubleshooting.md](docs/troubleshooting.md) | частые ошибки и что делать |
 | [CHANGELOG.md](CHANGELOG.md) | история версий |
 

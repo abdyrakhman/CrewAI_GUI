@@ -1,5 +1,9 @@
 # Architecture
 
+**Security modules:** `app/auth.py` — accounts (PBKDF2 hashes) and sessions,
+`app/observability.py` — JSONL request/error logs. See [auth.md](auth.md) and [logging.md](logging.md).
+
+
 How the application is built: layers, modules, the run lifecycle, storage and the
 constraints behind them.
 
