@@ -155,6 +155,25 @@ class EventRing:
             return self._last
 
 
+def _tool_target(raw: object) -> str:
+    """A short hint of what the tool acted on: file name, url or query."""
+    text = str(raw or "")
+    if not text:
+        return ""
+    try:
+        data = json.loads(text)
+    except (TypeError, ValueError):
+        return text[:160]
+    if isinstance(data, dict):
+        for key in ("filename", "path", "file", "file_path", "query", "url", "name"):
+            value = data.get(key)
+            if value:
+                return str(value)[:160]
+        keys = ", ".join(str(key) for key in list(data)[:4])
+        return f"{{{keys}}}"[:160]
+    return text[:160]
+
+
 class RunState:
     """One execution: its event log, aggregated text and final result."""
 
@@ -297,12 +316,16 @@ class RunState:
     # ---------------------------------------------------------------- events
     def emit(self, etype: str, data: dict | None = None) -> None:
         payload = {k: v for k, v in (data or {}).items() if v is not None}
+        if etype == "llm_chunk":
+            # Raw model tokens are accumulated for the final text but never sent
+            # as events: a long answer would flood the UI and freeze the tab.
+            with self._cond:
+                task = str(payload.get("task") or payload.get("agent") or "output")
+                self.task_text.setdefault(task, []).append(str(payload.get("text") or ""))
+            return
         with self._cond:
             event = {"ts": round(time.time(), 3), "type": etype, "data": payload}
             self.events.append(event)
-            if etype == "llm_chunk":
-                task = str(payload.get("task") or payload.get("agent") or "output")
-                self.task_text.setdefault(task, []).append(str(payload.get("text") or ""))
             self._cond.notify_all()
         if etype != "llm_chunk":
             self._maybe_persist()
@@ -888,7 +911,8 @@ class RunManager:
                 {
                     "tool": getattr(event, "tool_name", "") or "",
                     "agent": getattr(event, "agent_role", "") or "",
-                    "args": _plain(getattr(event, "tool_args", ""), 1500),
+                    "task": getattr(event, "task_name", "") or "",
+                    "target": _tool_target(getattr(event, "tool_args", "")),
                 },
             )
 

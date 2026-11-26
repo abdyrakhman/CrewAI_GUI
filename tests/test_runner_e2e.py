@@ -132,7 +132,7 @@ def main() -> int:
         and bool((state.result or {}).get("raw"))
         and types.count("task_start") >= 2
         and types.count("task_done") >= 2
-        and "llm_chunk" in types
+        and "llm_chunk" not in types
         and snapshot_path.exists()
     )
     print("\nE2E RESULT:", "PASS" if ok else "FAIL")

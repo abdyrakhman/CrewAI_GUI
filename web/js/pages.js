@@ -12,7 +12,7 @@ function renderWelcome() {
           <h1 style="margin:14px 0 8px;font-size:26px;letter-spacing:-.6px">Команда ИИ-агентов — в графическом интерфейсе</h1>
           <p class="muted" style="max-width:620px;margin:0 0 22px;font-size:14px">
             Соберите агентов и задачи, задайте модель и нажмите «Запустить». Всё, что раньше требовало консоли,
-            доступно здесь: настройки, живые ответы модели, история запусков и готовый Python-код.
+            доступно здесь: настройки, шаги агентов и инструментов, история запусков и готовый Python-код.
           </p>
           <div class="row-wrap">
             <button class="btn btn-primary" data-action="new-crew">${icon("plus")} Создать проект</button>
@@ -642,7 +642,7 @@ function renderSettings() {
                 <span class="hint-text">Формат: провайдер/модель, например <code>openai/gpt-4o-mini</code>, <code>ollama/llama3.1</code>.</span>
               </div>
               <div class="row-wrap" style="gap:18px;margin-top:4px">
-                <label class="toggle"><input type="checkbox" data-setting="live_stream" ${settings.live_stream ? "checked" : ""}><span class="track"></span> Потоковая передача ответов</label>
+                
                 <label class="toggle"><input type="checkbox" data-setting="allow_network_tools" ${((settings.allow_network_tools || []).length || settings.allow_network_tools === true) ? "checked" : ""}><span class="track"></span> Сетевые инструменты третьих сторон</label>
               </div>
               <p class="hint-text" style="margin:8px 0 0">Сторонние инструменты («crewai-tools») работают вне песочницы приложения:
