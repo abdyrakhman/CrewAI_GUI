@@ -39,6 +39,7 @@ DEFAULT_SETTINGS: dict = {
     "allow_network_tools": [],
     "ui_language": "ru",
     "session_ttl_hours": 12,
+    "runs_retention_days": 180,
     "theme": "dark",
 }
 

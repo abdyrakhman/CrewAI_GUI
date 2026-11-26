@@ -144,6 +144,12 @@ Service directories are refused immediately, without a dialog.
 
 ## History and reports
 
+- History is paginated, 50 runs per page: «Showing 1–50 of 120», Back/Next buttons and a status filter
+  (completed, failed, cancelled).
+- Retention is set in Settings → Run history: 30/90/180 days, a year, or “keep forever”.
+  Old runs are removed at the next start; at most 5,000 records are kept.
+
+
 History keeps every run: project, status, start, duration, tokens. Open a run, inspect the
 events, download `.md` or `.json`, or delete it. Runs interrupted by a restart are marked
 unfinished on startup.

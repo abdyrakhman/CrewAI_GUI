@@ -310,6 +310,12 @@ class Store:
             for key, value in (patch or {}).items():
                 if key not in DEFAULT_SETTINGS or key in {"secret_flags", "env_flags"}:
                     continue
+                if key == "runs_retention_days":
+                    try:
+                        current[key] = max(0, min(int(float(value)), 3650))
+                    except (TypeError, ValueError):
+                        pass
+                    continue
                 if key == "session_ttl_hours":
                     try:
                         current[key] = max(1, min(int(float(value)), 720))
@@ -509,6 +515,92 @@ class Store:
             runs = [entry for entry in entries.values() if not entry.get("deleted")]
             runs.sort(key=lambda r: r.get("started_at") or "", reverse=True)
             return runs[:limit]
+
+    def runs_page(
+        self, limit: int = 50, offset: int = 0, status: str = "", crew_id: str = ""
+    ) -> dict:
+        """A slice of the run history with the total count for the UI."""
+        try:
+            limit = max(1, min(int(limit), 200))
+        except (TypeError, ValueError):
+            limit = 50
+        try:
+            offset = max(0, int(offset))
+        except (TypeError, ValueError):
+            offset = 0
+        with self._lock:
+            entries = self._read_run_index()
+            if not entries:
+                entries = self._rebuild_run_index()
+            runs = [entry for entry in entries.values() if not entry.get("deleted")]
+            if status:
+                runs = [entry for entry in runs if entry.get("status") == status]
+            if crew_id:
+                runs = [entry for entry in runs if entry.get("crew_id") == crew_id]
+            runs.sort(key=lambda entry: entry.get("started_at") or "", reverse=True)
+            return {
+                "runs": runs[offset : offset + limit],
+                "total": len(runs),
+                "limit": limit,
+                "offset": offset,
+            }
+
+    def prune_runs(self, max_runs: int = 5000) -> dict:
+        """Delete runs older than the retention setting and cap the total number."""
+        from datetime import datetime, timedelta
+
+        settings = self.get_settings()
+        try:
+            days = int(settings.get("runs_retention_days") or 0)
+        except (TypeError, ValueError):
+            days = 180
+        cutoff = datetime.now() - timedelta(days=days) if days > 0 else None
+
+        removed = 0
+        with self._lock:
+            entries = self._read_run_index()
+            if not entries:
+                entries = self._rebuild_run_index()
+            alive = [entry for entry in entries.values() if not entry.get("deleted")]
+            alive.sort(key=lambda entry: entry.get("started_at") or "", reverse=True)
+            keep = []
+            for entry in alive:
+                stale = False
+                if cutoff is not None:
+                    try:
+                        started = datetime.fromisoformat(str(entry.get("started_at") or ""))
+                    except ValueError:
+                        started = None
+                    stale = bool(started and started < cutoff)
+                if stale:
+                    try:
+                        self._run_path(entry["id"]).unlink(missing_ok=True)
+                    except OSError:
+                        pass
+                    removed += 1
+                else:
+                    keep.append(entry)
+            if len(keep) > max_runs:
+                for entry in keep[max_runs:]:
+                    try:
+                        self._run_path(entry["id"]).unlink(missing_ok=True)
+                    except OSError:
+                        pass
+                    removed += 1
+                keep = keep[:max_runs]
+
+            if removed:
+                tmp = RUNS_INDEX.with_suffix(".jsonl.tmp")
+                try:
+                    tmp.write_text(
+                        "".join(json.dumps(entry, ensure_ascii=False) + "\n" for entry in keep),
+                        encoding="utf-8",
+                    )
+                    tmp.replace(RUNS_INDEX)
+                    self._index_appends = 0
+                except OSError:
+                    pass
+        return {"deleted": removed, "kept": len(keep)}
 
     def delete_run(self, run_id: str) -> bool:
         path = self._run_path(run_id)

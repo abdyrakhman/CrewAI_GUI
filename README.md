@@ -81,7 +81,7 @@
 | [docs/auth.md](docs/auth.md) | вход, аккаунты, обязательная смена пароля, время жизни сессии, восстановление |
 | [docs/logging.md](docs/logging.md) | логи `data/logs`, коды ошибок, `error_id`, логи запусков, диагностика |
 | [docs/security.md](docs/security.md) | модель доверия, что закрыто, остаточные риски и рекомендации |
-| [docs/testing.md](docs/testing.md) | 17 наборов тестов: что покрывают и как запускать |
+| [docs/testing.md](docs/testing.md) | 18 наборов тестов: что покрывают и как запускать |
 | [docs/troubleshooting.md](docs/troubleshooting.md) | частые ошибки и что делать |
 | [CHANGELOG.md](CHANGELOG.md) | история версий |
 
