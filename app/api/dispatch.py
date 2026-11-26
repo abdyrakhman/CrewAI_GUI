@@ -466,7 +466,12 @@ def handle(api, method: str, path: str, query: dict[str, list[str]]) -> bool:
         return True
 
     if path == "/api/runs/active" and method == "GET":
-        api._send_json(200, {"run_id": api.manager.active_id()})
+        active = api.manager.active_id()
+        pending: list[dict] = []
+        if active:
+            state = api.manager.get(active)
+            pending = state.pending_permissions() if state else []
+        api._send_json(200, {"run_id": active, "pending_permissions": pending})
         return True
 
     match = re.fullmatch(r"/api/runs/([\w-]+)/permissions/([\w-]+)", path)

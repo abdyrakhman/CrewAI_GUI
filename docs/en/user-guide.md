@@ -127,6 +127,12 @@ tool count, model.
 
 ## Access requests and confirmations
 
+- Closing the prompt does not lose the request: the run header shows a banner
+  “The run is waiting for approval” with an **Open request** button.
+- Elsewhere the active-run indicator says “approval needed” — clicking it returns to the run.
+- Without an answer the access request expires in 5 minutes and the run continues without it.
+
+
 When an agent needs a file outside the workspace, or a write with confirmation enabled, the
 run pauses and a dialog appears: what is requested, by which agent, and three buttons —
 Allow, Allow until the end of the run, Deny. The folder/file shown is exactly what is

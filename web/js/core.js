@@ -523,7 +523,10 @@ function render() {
   renderSidebar();
   renderTopbar();
   if (state.view === "builder") renderBuilder();
-  else if (state.view === "run") renderRun();
+  else if (state.view === "run") {
+    renderRun();
+    if (typeof updatePermissionBanner === "function") updatePermissionBanner();
+  }
   else if (state.view === "history") renderHistory();
   else if (state.view === "templates") renderTemplates();
   else if (state.view === "roles") renderRoles();
@@ -543,7 +546,10 @@ function go(view) {
   $("#view").scrollTop = 0;
 }
 
-function openModal({ title, body, footer = "", wide = false }) {
+let modalOnClose = null;
+
+function openModal({ title, body, footer = "", wide = false, onClose = null }) {
+  modalOnClose = onClose;
   const root = $("#modal-root");
   root.innerHTML = `
     <div class="modal-backdrop" data-action="close-modal"></div>
@@ -559,6 +565,9 @@ function closeModal() {
   const root = $("#modal-root");
   root.classList.remove("open");
   root.innerHTML = "";
+  const callback = modalOnClose;
+  modalOnClose = null;
+  if (callback) callback();
 }
 
 /* ------------------------------------------------------------------- save */

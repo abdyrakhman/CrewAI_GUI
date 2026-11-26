@@ -177,6 +177,12 @@ Invoke-RestMethod 'http://127.0.0.1:7860/api/crews' -Headers $h
 | `GET` | `/api/runs/{id}/export?format=md|json` | — | файл |
 | `GET` | `/api/runs/{id}/events` | — | SSE |
 
+### Ожидающие подтверждения
+
+`GET /api/runs/active` и `GET /api/runs/{id}` возвращают `pending_permissions`: список запросов,
+на которых запуск сейчас стоит (`id`, `kind`, `target`, `grant`, `base`). Пустой список — запуск
+не ждёт ответа.
+
 ### SSE
 
 ```
