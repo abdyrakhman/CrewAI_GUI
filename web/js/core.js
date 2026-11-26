@@ -547,27 +547,75 @@ function go(view) {
 }
 
 let modalOnClose = null;
+let modalReturnFocus = null;
+let modalKeyHandler = null;
 
 function openModal({ title, body, footer = "", wide = false, onClose = null }) {
   modalOnClose = onClose;
+  modalReturnFocus = document.activeElement;
   const root = $("#modal-root");
   root.innerHTML = `
     <div class="modal-backdrop" data-action="close-modal"></div>
-    <div class="modal" style="${wide ? "width:min(980px, calc(100vw - 40px))" : ""}">
-      <div class="modal-head"><h2>${esc(title)}</h2><button class="btn btn-icon" data-action="close-modal">${icon("x", 18)}</button></div>
+    <div class="modal" role="dialog" aria-modal="true" aria-label="${esc(title)}" tabindex="-1" style="${wide ? "width:min(980px, calc(100vw - 40px))" : ""}">
+      <div class="modal-head"><h2>${esc(title)}</h2><button class="btn btn-icon" data-action="close-modal" aria-label="Закрыть">${icon("x", 18)}</button></div>
       <div class="modal-body">${body}</div>
       ${footer ? `<div class="modal-foot">${footer}</div>` : ""}
     </div>`;
   root.classList.add("open");
+
+  const dialog = root.querySelector(".modal");
+  const focusables = () =>
+    Array.from(dialog.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+      .filter((node) => !node.disabled && node.offsetParent !== null);
+  modalKeyHandler = (event) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeModal();
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const items = focusables();
+    if (!items.length) {
+      event.preventDefault();
+      dialog.focus();
+      return;
+    }
+    const first = items[0];
+    const last = items[items.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+  document.addEventListener("keydown", modalKeyHandler);
+  setTimeout(() => {
+    const items = focusables();
+    (items[0] || dialog).focus();
+  }, 0);
 }
 
 function closeModal() {
+  if (modalKeyHandler) {
+    document.removeEventListener("keydown", modalKeyHandler);
+    modalKeyHandler = null;
+  }
   const root = $("#modal-root");
   root.classList.remove("open");
   root.innerHTML = "";
   const callback = modalOnClose;
   modalOnClose = null;
   if (callback) callback();
+  if (modalReturnFocus && document.contains(modalReturnFocus)) {
+    try {
+      modalReturnFocus.focus();
+    } catch (error) {
+      /* the element may have been re-rendered */
+    }
+  }
+  modalReturnFocus = null;
 }
 
 /* ------------------------------------------------------------------- save */

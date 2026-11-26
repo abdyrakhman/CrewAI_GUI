@@ -109,6 +109,10 @@ def handle(api, method: str, path: str, query: dict[str, list[str]]) -> bool:
             data = base64.b64decode(raw, validate=False)
         except Exception as exc:  # noqa: BLE001
             raise ValueError(f"Не удалось декодировать файл: {exc}") from exc
+        if len(data) > security.MAX_UPLOAD:
+            limit_mb = security.MAX_UPLOAD // (1024 * 1024)
+            api._error(413, f"Файл больше {limit_mb} МБ — уменьшите его или загрузите частями")
+            return True
         target_dir = None
         crew_id = str(payload.get("crew_id") or "")
         if crew_id:

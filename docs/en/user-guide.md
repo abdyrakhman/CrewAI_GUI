@@ -162,6 +162,12 @@ unfinished on startup.
 
 ## Project files
 
+- A single uploaded file is limited to **16 MB**; bigger files are rejected with a clear message.
+- Modals support `Esc` (close) and `Tab` (focus stays inside the dialog).
+- The app runs as a single instance: a second process on the same `data` folder refuses to start
+  (`data/.studio.lock`) to protect projects and settings.
+
+
 Shows the workspace and task results; upload a file for the agent to read. Viewing and
 downloading stay inside the workspace and the outputs folder.
 
