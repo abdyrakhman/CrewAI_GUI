@@ -37,6 +37,7 @@ def check(name: str, condition: bool, detail: str = "") -> None:
 
 def main() -> int:
     server = create_server("127.0.0.1", PORT)
+    admin_password = str((getattr(server, "generated_admin", {}) or {}).get("password") or "")
     threading.Thread(target=server.serve_forever, daemon=True).start()
     time.sleep(0.6)
 
@@ -53,6 +54,11 @@ def main() -> int:
             page.wait_for_timeout(900)
             body = page.inner_text("body")
             check("login page uses the app language (en)", "Sign in" in body and "Password" in body, body[:140])
+            bootstrap = page.locator("#bootstrap-block")
+            check("first-run password block is visible", bootstrap.is_visible())
+            block_text = bootstrap.inner_text()
+            check("block shows the generated password",
+                  admin_password in block_text and "admin" in block_text, block_text[:80])
             check("page lang attribute is en", page.evaluate("document.documentElement.lang") == "en")
 
             page.click("#to-register")
@@ -61,11 +67,16 @@ def main() -> int:
 
             page.click("#to-login")
             page.fill("#login-user", "admin")
-            page.fill("#login-pass", "123admin!")
+            page.fill("#login-pass", admin_password)
             page.click("#login-submit")
             page.wait_for_timeout(1800)
             check("password screen is translated", "Change the password" in page.inner_text("body"),
                   page.inner_text("body")[:140])
+            page.fill("#current", admin_password)
+            page.fill("#next", "newpass123")
+            page.fill("#repeat", "newpass123")
+            page.click("#submit")
+            page.wait_for_timeout(2200)
 
             Store().save_settings({"ui_language": "ru"})
             fresh = browser.new_context(locale="en-US")
@@ -73,6 +84,9 @@ def main() -> int:
             ru_page.goto(BASE + "/login", wait_until="domcontentloaded")
             ru_page.wait_for_timeout(900)
             check("login page switches back to Russian", "Вход" in ru_page.inner_text("body"))
+            check("password block is gone after the change", ru_page.locator("#bootstrap-block").is_hidden())
+            check("password is not printed anywhere", "newpass123" not in ru_page.inner_text("body")
+                  and admin_password not in ru_page.inner_text("body"))
             fresh.close()
             check("no JavaScript errors", not errors, str(errors[:2]))
             browser.close()

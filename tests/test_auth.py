@@ -19,6 +19,7 @@ for sub in ("crews", "runs", "outputs", "uploads"):
     (DATA / sub).mkdir(parents=True, exist_ok=True)
 os.environ["CREWAI_STUDIO_DATA"] = str(DATA)
 
+from app import auth  # noqa: E402
 from app.server import create_server  # noqa: E402
 from app.store import Store  # noqa: E402
 
@@ -63,10 +64,49 @@ def cookie_from(header: str) -> str:
 
 
 def main() -> int:
+    # the old published password must be rotated automatically
+    legacy_users = DATA / "legacy-users.json"
+    legacy_sessions = DATA / "legacy-sessions.json"
+    saved_users, saved_sessions = auth.USERS_FILE, auth.SESSIONS_FILE
+    auth.USERS_FILE, auth.SESSIONS_FILE = legacy_users, legacy_sessions
+    auth._users_cache = None
+    try:
+        auth.create_user("admin", "123admin!", must_change=False)
+        rotated = auth.ensure_default_admin()
+        check("legacy default password is rotated", bool(rotated) and rotated.get("rotated") is True, str(rotated))
+        check("old published password stops working",
+              not auth.verify_password("123admin!", auth.get_user("admin") or {}))
+        check("rotated password works",
+              bool(rotated) and auth.verify_password(rotated["password"], auth.get_user("admin") or {}))
+    finally:
+        legacy_users.unlink(missing_ok=True)
+        legacy_sessions.unlink(missing_ok=True)
+        auth.USERS_FILE, auth.SESSIONS_FILE = saved_users, saved_sessions
+        auth._users_cache = None
+
     store_settings = {"session_ttl_hours": 3}
     server = create_server("127.0.0.1", PORT)
+    seeded = getattr(server, "generated_admin", {}) or {}
+    admin_password = str(seeded.get("password") or "")
+    check("admin password is generated", bool(admin_password) and len(admin_password) >= 12, admin_password)
+    check("generated password is not the published default", admin_password != "123admin!", admin_password)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     time.sleep(0.6)
+
+    status, payload, _ = call("/api/auth/state")
+    bootstrap = (payload or {}).get("bootstrap") or {}
+    check("login screen gets the generated password", bootstrap.get("password") == admin_password,
+          str(bootstrap)[:100])
+
+    # a restart before the first sign-in must show a fresh, valid password
+    auth.clear_bootstrap()
+    restarted = auth.ensure_default_admin() or {}
+    check("restart regenerates the bootstrap password", restarted.get("rotated") is True, str(restarted)[:80])
+    check("previous bootstrap stops working",
+          not auth.verify_password(admin_password, auth.get_user("admin") or {}))
+    admin_password = str(restarted.get("password") or "")
+    check("new bootstrap is valid",
+          bool(admin_password) and auth.verify_password(admin_password, auth.get_user("admin") or {}))
 
     try:
         status, payload, _ = call("/api/auth/state")
@@ -81,8 +121,11 @@ def main() -> int:
         status, payload, _ = call("/api/auth/login", "POST", {"username": "admin", "password": "wrong"})
         check("wrong password is rejected", status == 401, f"{status} {str(payload)[:80]}")
 
-        status, payload, set_cookie = call("/api/auth/login", "POST", {"username": "admin", "password": "123admin!"})
-        check("default admin signs in", status == 200 and payload.get("user") == "admin", str(payload)[:120])
+        status, payload, _ = call("/api/auth/login", "POST", {"username": "admin", "password": "123admin!"})
+        check("published default is not accepted", status == 401, str(status))
+
+        status, payload, set_cookie = call("/api/auth/login", "POST", {"username": "admin", "password": admin_password})
+        check("generated admin signs in", status == 200 and payload.get("user") == "admin", str(payload)[:120])
         check("first login demands a new password", payload.get("must_change") is True, str(payload)[:120])
         check("login sets a session cookie", "studio_session=" in set_cookie, set_cookie[:80])
         cookie = cookie_from(set_cookie)
@@ -96,14 +139,17 @@ def main() -> int:
               str(payload)[:100])
 
         status, payload, _ = call(
-            "/api/auth/password", "POST", {"current": "123admin!", "new": "newpass123"}, cookie=cookie
+            "/api/auth/password", "POST", {"current": admin_password, "new": "newpass123"}, cookie=cookie
         )
         check("password change is accepted", status == 200, f"{status} {str(payload)[:80]}")
 
         status, payload, _ = call("/api/info", cookie=cookie)
         check("API opens after the change", status == 200 and payload.get("app"), str(status))
+        status, payload, _ = call("/api/auth/state")
+        check("password is no longer shown after the change", (payload or {}).get("bootstrap") is None,
+              str(payload.get("bootstrap"))[:80])
 
-        status, payload, _ = call("/api/auth/login", "POST", {"username": "admin", "password": "123admin!"})
+        status, payload, _ = call("/api/auth/login", "POST", {"username": "admin", "password": admin_password})
         check("old password stops working", status == 401, str(status))
         status, payload, set_cookie = call("/api/auth/login", "POST", {"username": "admin", "password": "newpass123"})
         check("new password works", status == 200, str(payload)[:80])

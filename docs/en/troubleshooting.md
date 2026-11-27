@@ -94,7 +94,8 @@ If an error is unclear, open `data/logs/app-YYYYMMDD.jsonl`: it contains `reques
 
 1. Stop the app.
 2. Delete `data/users.json` (and `data/sessions.json` to drop sessions).
-3. Start again: `admin / 123admin!` is recreated, or the `CREWAI_STUDIO_ADMIN_*` values are used.
+3. Start again: `admin` is recreated with a random password printed in the console
+   (or the `CREWAI_STUDIO_ADMIN_*` values are used).
 
 This removes all accounts: passwords are stored irreversibly. Then change the password in Settings → Account.
 

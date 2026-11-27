@@ -23,6 +23,10 @@
       "error.short": "Пароль должен быть не короче 8 символов",
       "error.offline": "Сервер недоступен. Обновите страницу.",
       "error.request": "Не удалось выполнить запрос",
+      "bootstrap.title": "Первый запуск",
+      "bootstrap.hint": "Введите эти данные для входа. Пароль будет показан, пока вы его не смените.",
+      "bootstrap.copy": "Скопировать",
+      "bootstrap.copied": "Скопировано",
     },
     en: {
       title: "CrewAI Studio — sign in",
@@ -47,12 +51,45 @@
       "error.short": "The password must be at least 8 characters",
       "error.offline": "Server is unavailable. Reload the page.",
       "error.request": "The request failed",
+      "bootstrap.title": "First launch",
+      "bootstrap.hint": "Use these credentials to sign in. The password is shown until you change it.",
+      "bootstrap.copy": "Copy",
+      "bootstrap.copied": "Copied",
     },
   };
 
   const state = { hasUsers: true, mode: "login", lang: "ru" };
   const dict = () => TEXT[state.lang] || TEXT.ru;
   const t = (key) => dict()[key] || TEXT.ru[key] || key;
+
+  const bootstrapBlock = document.getElementById("bootstrap-block");
+  const bootstrapUser = document.getElementById("bootstrap-user");
+  const bootstrapPass = document.getElementById("bootstrap-pass");
+  const bootstrapCopy = document.getElementById("bootstrap-copy");
+  let bootstrapCreds = null;
+
+  function applyBootstrap(creds) {
+    bootstrapCreds = creds && creds.password ? creds : null;
+    if (!bootstrapBlock) return;
+    bootstrapBlock.classList.toggle("hidden", !bootstrapCreds);
+    if (!bootstrapCreds) return;
+    bootstrapUser.textContent = bootstrapCreds.username;
+    bootstrapPass.textContent = bootstrapCreds.password;
+    if (!loginUser.value) loginUser.value = bootstrapCreds.username;
+  }
+
+  if (bootstrapCopy) {
+    bootstrapCopy.addEventListener("click", async () => {
+      if (!bootstrapCreds) return;
+      try {
+        await navigator.clipboard.writeText(`${bootstrapCreds.username} / ${bootstrapCreds.password}`);
+        bootstrapCopy.textContent = t("bootstrap.copied");
+        setTimeout(() => { bootstrapCopy.textContent = t("bootstrap.copy"); }, 1600);
+      } catch (error) {
+        bootstrapCopy.textContent = t("bootstrap.copy");
+      }
+    });
+  }
 
   const loginBlock = document.getElementById("login-block");
   const registerBlock = document.getElementById("register-block");
@@ -74,6 +111,7 @@
     document.querySelectorAll("[data-i18n-ph]").forEach((node) => {
       node.placeholder = t(node.dataset.i18nPh);
     });
+    if (bootstrapCopy) bootstrapCopy.textContent = t("bootstrap.copy");
     if (state.mode === "register") {
       registerTitle.textContent = state.hasUsers ? t("register.title") : t("register.firstTitle");
       registerHint.textContent = state.hasUsers ? t("register.hint") : t("register.firstHint");
@@ -159,6 +197,7 @@
       state.hasUsers = Boolean(data.has_users);
       const fallback = (navigator.language || "").toLowerCase().startsWith("ru") ? "ru" : "en";
       applyLanguage(data.language === "en" ? "en" : data.language === "ru" ? "ru" : fallback);
+      applyBootstrap(data.bootstrap);
       if (data.user) {
         location.replace("/");
         return;

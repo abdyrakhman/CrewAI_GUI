@@ -5,9 +5,14 @@ machine should not see your projects or change your settings.
 
 ## First run
 
-- If `data/users.json` is missing or empty, the administrator **admin / 123admin!** is created on start.
+- If `data/users.json` is missing or empty, the administrator **admin** is created with a random
+  password. Login and password are printed in the console and **shown on the login page** until the
+  password is changed; afterwards it is never displayed again.
 - Override with `CREWAI_STUDIO_ADMIN_USER` and `CREWAI_STUDIO_ADMIN_PASSWORD` (used only while no accounts exist).
 - That account is marked `must_change`.
+
+When upgrading from an older version, the published password `123admin!` is replaced with a random
+one and the new password is printed in the console; the old one stops working.
 
 ## Forced password change
 
@@ -48,7 +53,8 @@ machine should not see your projects or change your settings.
 
 1. Stop the app.
 2. Delete `data/users.json` (optionally `data/sessions.json`).
-3. Start again: `admin / 123admin!` is recreated, or the values from the environment variables.
+3. Start again: `admin` is recreated with a random password printed in the console
+   (or use the environment variables).
 
 This resets **all** accounts. There is no other recovery: passwords are stored irreversibly.
 
