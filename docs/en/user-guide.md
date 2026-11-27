@@ -5,6 +5,18 @@ on your machine: projects, history and keys live in `data/`; only model requests
 
 ## Install and first launch
 
+No-git path — the installer:
+
+```powershell
+$f = "$env:TEMP\crewai-install.ps1"
+iwr https://raw.githubusercontent.com/abdyrakhman/CrewAI_GUI/main/install.ps1 -UseBasicParsing -OutFile $f
+powershell -ExecutionPolicy Bypass -File $f
+```
+
+It downloads the project archive into `%LOCALAPPDATA%\CrewAI Studio`, creates `.venv`, installs
+dependencies and makes a shortcut. Offline: `-Source C:\path\crewai.zip`.
+
+
 1. Install Python 3.11+ (tested on 3.12). Chrome is only needed for browser tests.
 2. Unpack the project, e.g. to `E:\CrewAI`.
 3. Double-click `start.bat`: it creates `.venv`, installs `requirements.txt`, starts the

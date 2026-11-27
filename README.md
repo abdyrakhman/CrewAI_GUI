@@ -56,6 +56,37 @@
 
 ![Первый запуск](docs/screenshots/welcome.png)
 
+## Установка одной командой
+
+Ничего не нужно клонировать: установщик сам скачивает архив с GitHub (без git), создаёт окружение,
+ставит зависимости и делает ярлык.
+
+```powershell
+$f = "$env:TEMP\crewai-install.ps1"
+iwr https://raw.githubusercontent.com/abdyrakhman/CrewAI_GUI/main/install.ps1 -UseBasicParsing -OutFile $f
+powershell -ExecutionPolicy Bypass -File $f
+```
+
+Если проект уже скачан, запустите из его папки:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install.ps1
+```
+
+Параметры:
+
+| Параметр | Что делает |
+|---|---|
+| `-InstallDir "D:\Tools\CrewAI"` | куда ставить (по умолчанию `%LOCALAPPDATA%\CrewAI Studio`) |
+| `-Run` | сразу запустить после установки |
+| `-Port 8080` | порт при `-Run` |
+| `-Source C:\path\crewai.zip` | офлайн-установка из ZIP или папки |
+| `-PythonExe C:\Python312\python.exe` | явно указать Python 3.10–3.13 |
+| `-NoShortcut` / `-NoDesktop` | не создавать ярлыки |
+| `-SkipDeps` | только разложить файлы и создать окружение |
+
+Нужен Python 3.10–3.13 (лучше 3.12) и интернет для зависимостей. Папка `data` при обновлении сохраняется.
+
 ## Быстрый старт
 
 1. Установите [Python 3.10–3.13](https://www.python.org/downloads/) (при установке отметьте **Add python.exe to PATH**).

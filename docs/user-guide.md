@@ -23,6 +23,18 @@ CrewAI Studio — локальное приложение с графическ�
 
 ## Установка и первый запуск
 
+Быстрый путь без git — установщик:
+
+```powershell
+$f = "$env:TEMP\crewai-install.ps1"
+iwr https://raw.githubusercontent.com/abdyrakhman/CrewAI_GUI/main/install.ps1 -UseBasicParsing -OutFile $f
+powershell -ExecutionPolicy Bypass -File $f
+```
+
+Он скачивает архив проекта, кладёт приложение в `%LOCALAPPDATA%\CrewAI Studio`, создаёт `.venv`,
+ставит зависимости и делает ярлык. Офлайн-вариант: `-Source C:\path\crewai.zip`.
+
+
 1. Установите **Python 3.11 или новее** (проверено на 3.12) и **Google Chrome** —
    он нужен только для браузерных тестов, не для работы.
 2. Распакуйте папку проекта, например в `E:\CrewAI`.
