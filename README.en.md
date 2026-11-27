@@ -8,6 +8,8 @@ editing.
 
 ## Features
 
+- **Sign-in and passwords** — the app is password-protected: the first start creates `admin` with a random password shown on the login page and in the console until you change it; then it disappears. Cookie sessions, sign out everywhere, login attempt limit, password change in settings.
+- **One-command install** — `install.ps1` downloads the archive without git, creates the environment, installs dependencies and makes a shortcut; offline `-Source` is supported.
 - **Team builder** — agents (role, goal, backstory, model, tools) and tasks (description,
   expected output, assignee, context, output format) in ordinary forms.
 - **Project workspace** — every project has its own folder on disk; agents read and write
@@ -23,7 +25,7 @@ editing.
   Pick a role and goal, experience, character and tools are filled in. Roles are editable.
 - **Custom templates** — save a project as a template, apply it in one click, rename or delete.
 - **Per-agent limits** — max iterations and a time limit; the run log prints the effective values first.
-- **Live run** — agent steps per task, tool calls, timing and token usage (raw model tokens are not streamed).
+- **Live run** — agent steps per task, tool calls, timing and token usage; raw model tokens are not streamed.
 - **Stop and detach** — stop at the nearest step; if the model hangs, the run is marked as
   force-stopping after 12 seconds, and Detach frees the slot immediately.
 - **History** — every run is kept with results and tokens; open it, export `.md`/`.json`, delete.
@@ -129,7 +131,7 @@ More detail: [docs/en/architecture.md](docs/en/architecture.md).
 
 ## Tests
 
-22 suites, no tokens spent: a local OpenAI-compatible mock replaces the provider.
+24 suites, no tokens spent: a local OpenAI-compatible mock replaces the provider.
 
 ```bat
 .venv\Scripts\python.exe tests\test_runner_e2e.py

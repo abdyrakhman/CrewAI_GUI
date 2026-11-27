@@ -4,7 +4,7 @@
 #
 #   powershell -ExecutionPolicy Bypass -File install.ps1
 #   powershell -ExecutionPolicy Bypass -File install.ps1 -Source C:\path\crewai.zip
-#   powershell -ExecutionPolicy Bypass -File install.ps1 -InstallDir D:\Tools\CrewAI -Run
+#   powershell -ExecutionPolicy Bypass -File install.ps1 -InstallDir D:\Tools\CrewAI -Run -Port 8080
 #   powershell -ExecutionPolicy Bypass -File install.ps1 -PythonExe C:\Python312\python.exe
 [CmdletBinding()]
 param(

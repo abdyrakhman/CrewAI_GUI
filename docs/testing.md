@@ -27,6 +27,8 @@
 .venv\Scripts\python.exe tests\test_runs_pagination.py
 .venv\Scripts\python.exe tests\test_run_limits.py
 .venv\Scripts\python.exe tests\test_logs_api.py
+.venv\Scripts\python.exe tests\test_installer.py
+.venv\Scripts\python.exe tests\test_docs.py
 
 :: браузерные (Chrome + playwright)
 .venv\Scripts\python.exe tests\test_ui.py
@@ -38,7 +40,7 @@
 ```
 
 Каждый печатает строки `PASS`/`FAIL` и итог `… RESULT: PASS`. Код возврата `0` — успех, `1` — есть падения.
-Всего 22 набора.
+Всего 24 набора.
 
 ## Что покрывает каждый набор
 
@@ -60,6 +62,8 @@
 | `test_runs_pagination.py` | пагинация истории, фильтры, retention и удаление старых запусков |
 | `test_run_limits.py` | лимит времени прогона, предел итераций агента, нормализация настроек |
 | `test_logs_api.py` | журнал `/api/logs/recent`, редакция секретов, модалки диагностики |
+| `test_installer.py` | синтаксис `install.ps1`, параметры, отсутствие пароля по умолчанию, состав копируемых файлов |
+| `test_docs.py` | тесты перечислены в документации, счётчики совпадают, ссылки и пары RU/EN корректны |
 | `test_ui.py` | интерфейс: создание проекта, запуск, результат, отмена |
 | `test_ui_features.py` | роли, шаблоны, удаление проектов |
 | `test_ui_workspace.py` | выбор рабочей области, сброс, ошибки пути |

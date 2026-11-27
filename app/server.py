@@ -82,6 +82,13 @@ class StudioHandler(BaseHTTPRequestHandler):
     session_token: str = ""
     allowed_hosts: set[str] = set()
 
+    def handle_one_request(self) -> None:
+        try:
+            super().handle_one_request()
+        except (ConnectionResetError, ConnectionAbortedError, BrokenPipeError, TimeoutError):
+            # a browser tab closed mid-request must not print a traceback to the console
+            self.close_connection = True
+
     def log_message(self, fmt: str, *args: Any) -> None:  # noqa: A003 - stdlib signature
         if os.environ.get("CREWAI_STUDIO_VERBOSE"):
             sys.stderr.write("[studio] " + (fmt % args) + "\n")
