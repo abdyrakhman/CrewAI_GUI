@@ -149,6 +149,7 @@ def main() -> int:
                 check(f"view «{view}» renders", page.locator(marker).count() > 0)
             page.screenshot(path=str(SHOTS / "ui-settings.png"))
 
+
             # run limits and diagnostics are reachable from settings
             page.wait_for_selector('[data-setting="run_timeout_minutes"]', timeout=15000)
             page.select_option('[data-setting="run_timeout_minutes"]', "30")
@@ -164,6 +165,22 @@ def main() -> int:
                 f"{settings_now.get('run_timeout_minutes')}/{settings_now.get('max_iter_cap')}",
             )
             check("diagnostics card is present", page.locator('[data-action="show-errors"]').count() == 1)
+
+            # toggles must not scroll the page when they receive focus
+            project_id = page.evaluate("window.__studio.crew?.id")
+            page.goto(f"{BASE}/#crew={project_id}", wait_until="domcontentloaded")
+            page.wait_for_selector('[data-field="name"]', timeout=20000)
+            page.wait_for_timeout(800)
+            page.evaluate("() => window.scrollTo(0, 0)")
+            toggle = page.locator("label.toggle", has_text="Подтверждение изменений").first
+            toggle.scroll_into_view_if_needed()
+            page.wait_for_timeout(300)
+            page.evaluate("() => window.scrollTo(0, 0)")
+            before_y = page.evaluate("window.scrollY")
+            toggle.click()
+            page.wait_for_timeout(700)
+            after_y = page.evaluate("window.scrollY")
+            check("toggle does not scroll the page", abs(after_y - before_y) < 60, f"{before_y} -> {after_y}")
 
             # 6. export and code preview endpoints through the UI helpers
             page.goto(f"{BASE}/#view=history", wait_until="domcontentloaded")
