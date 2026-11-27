@@ -19,7 +19,7 @@ os.environ["CREWAI_STUDIO_RUN_TIMEOUT_SECONDS"] = "1.0"
 
 from mock_llm import MockLLMServer  # noqa: E402
 
-from app.runner import RunManager, _effective_max_iter  # noqa: E402
+from app.runner import RunManager, _effective_execution_time, _effective_max_iter  # noqa: E402
 from app.spec import normalize_crew, validate_crew  # noqa: E402
 from app.store import Store  # noqa: E402
 
@@ -72,6 +72,24 @@ def main() -> int:
         task["agent"] = crew["agents"][0]["id"]
     warnings = validate_crew(crew, {"read_local_file"})["warnings"]
     check("large max_iter is flagged", any("12 итераций" in item["message"] for item in warnings), str(warnings)[:160])
+
+    # confirmation + a short task limit is a trap: the task may expire while the prompt is open
+    risky = normalize_crew({
+        "name": "Подтверждение",
+        "agents": [{"role": "Писатель", "goal": "Писать", "backstory": "Опыт",
+                     "confirm_changes": True, "max_execution_time": 300}],
+        "tasks": [{"description": "Шаг", "expected_output": "1"}],
+    })
+    risky["tasks"][0]["agent"] = risky["agents"][0]["id"]
+    risky_warnings = validate_crew(risky, {"read_local_file"})["warnings"]
+    check("short task limit with confirmation is flagged",
+          any("пока вы отвечаете" in item["message"] for item in risky_warnings), str(risky_warnings)[:200])
+
+    # confirmation raises a too-short task limit instead of letting it expire
+    check("confirmation raises a short task limit", _effective_execution_time(300, True) == (900, True))
+    check("generous task limit stays as is", _effective_execution_time(1200, True) == (1200, False))
+    check("no limit is left untouched", _effective_execution_time(0, True) == (0, False))
+    check("limit without confirmation is untouched", _effective_execution_time(300, False) == (300, False))
 
     # a slow run hits the wall-clock limit (env override = 1 s)
     manager = RunManager(store)

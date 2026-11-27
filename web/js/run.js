@@ -311,7 +311,8 @@ function attachRun(runId) {
   [
     "run_started", "plan", "crew_start", "crew_done", "task_start", "task_focus", "task_done",
     "task_failed", "agent_start", "agent_done", "tool_start", "tool_done", "tool_error",
-    "llm_chunk", "usage", "warning", "info", "log", "error", "run_done", "run_cancelled", "stream_end",
+    "permission_request", "permission_resolved", "permission_denied", "force_stopping",
+    "usage", "warning", "info", "log", "error", "run_done", "run_cancelled", "stream_end",
   ].forEach((type) => es.addEventListener(type, handle(type)));
   es.addEventListener("open", () => {
     if (state.run) state.run.streamLost = false;
@@ -701,6 +702,7 @@ function resolvePendingPermission(requestId, closeIfOpen = true) {
 function finishPermissions() {
   const run = state.run;
   if (!run) return;
+  const unanswered = (run.pendingPermissions || []).length;
   run.pendingPermissions = [];
   if (run.permissionOpen) {
     run.permissionOpen = null;
@@ -708,6 +710,12 @@ function finishPermissions() {
   }
   updateRunIndicator();
   updatePermissionBanner();
+  if (unanswered && run.status === "failed") {
+    toast(
+      "Запуск завершился, не дождавшись подтверждения доступа — увеличьте «Макс. время» задачи",
+      "err",
+    );
+  }
 }
 
 function reconnectStream() {

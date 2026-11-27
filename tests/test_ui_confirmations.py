@@ -97,6 +97,37 @@ def main() -> int:
             page.wait_for_selector(".pill.running", timeout=10000)
             check("indicator returns to the run", page.locator(".run-banner").count() == 1)
 
+            # 3b. a real permission request must arrive through SSE, not only via a synthetic event
+            manager = server.RequestHandlerClass.manager
+            active_id = manager.active_id()
+            live_state = manager.get(active_id) if active_id else None
+            answer = {}
+            if live_state is not None:
+                def ask_permission():
+                    answer["allowed"], answer["note"] = live_state.ask_permission(
+                        "fs_write",
+                        "C:\\Users\\demo\\real-permission.md",
+                        "Агент хочет изменить файл",
+                        "Ассистент-исследователь",
+                        timeout=20,
+                    )
+
+                threading.Thread(target=ask_permission, daemon=True).start()
+                page.wait_for_selector("text=Агент запрашивает доступ", timeout=10000)
+                check("real permission request arrives over SSE",
+                      page.locator(".permission-target").count() == 1)
+                check("real request shows the target",
+                      "real-permission.md" in page.locator(".permission-target").inner_text())
+                page.click('[data-action="perm-allow"]')
+                page.wait_for_timeout(1200)
+                deadline = time.time() + 10
+                while time.time() < deadline and "allowed" not in answer:
+                    time.sleep(0.1)
+                check("real permission resolved from the UI", answer.get("allowed") is True, str(answer))
+                page.wait_for_timeout(400)
+            else:
+                check("real permission request arrives over SSE", False, "no active run")
+
             # 4. permission prompt blocks the run until answered
             page.evaluate(
                 """() => { handleRunEvent('permission_request', {

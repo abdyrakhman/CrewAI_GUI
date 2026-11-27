@@ -76,7 +76,7 @@ function agentCard(agent, index) {
           <input type="checkbox" data-field="agents.${index}.reasoning" ${agent.reasoning ? "checked" : ""}>
           <span class="track"></span> Рассуждения
         </label>
-        <label class="toggle" title="Перед каждым изменением файла спрашивать подтверждение">
+        <label class="toggle" title="Перед каждым изменением файла спрашивать подтверждение. Время ожидания входит в «Макс. время» задачи">
           <input type="checkbox" data-field="agents.${index}.confirm_changes" ${agent.confirm_changes ? "checked" : ""}>
           <span class="track"></span> Подтверждение изменений
         </label>
