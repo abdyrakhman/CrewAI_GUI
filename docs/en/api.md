@@ -43,13 +43,15 @@ otherwise `401 {"auth": true}`; while a mandatory password change is pending —
 
 | Method | Path | Body | Response |
 |---|---|---|---|
-| GET | `/api/auth/state` | — | `{has_users, user}` |
+| GET | `/api/auth/state` | — | `{has_users, user, language, bootstrap}` |
 | POST | `/api/auth/login` | `{username, password}` | `{user, must_change}` + `Set-Cookie` |
 | POST | `/api/auth/register` | `{username, password}` | `201 {user, must_change}` + `Set-Cookie` |
 | POST | `/api/auth/logout` | — | `{ok}` and a cleared cookie |
 | POST | `/api/auth/logout-all` | — | `{ok, dropped_sessions}` — ends all sessions of the user |
 | GET | `/api/auth/me` | — | `{user}` or 401 |
 | POST | `/api/auth/password` | `{current, new}` | `{ok, dropped_sessions}`; other sessions are closed |
+
+`bootstrap` is the generated first-run password (`{username, password}`); it is present only until the administrator changes the password, then it becomes `null`.
 
 The session is the `studio_session` cookie (HttpOnly, SameSite=Lax); its lifetime comes from
 `session_ttl_hours`. Mutating requests also need `X-Studio-Token` (from the page meta tag), except

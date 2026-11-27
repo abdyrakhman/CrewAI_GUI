@@ -43,13 +43,15 @@ Invoke-RestMethod 'http://127.0.0.1:7860/api/crews' -Headers $h
 
 | Метод | Путь | Тело | Ответ |
 |---|---|---|---|
-| GET | `/api/auth/state` | — | `{has_users, user}` |
+| GET | `/api/auth/state` | — | `{has_users, user, language, bootstrap}` |
 | POST | `/api/auth/login` | `{username, password}` | `{user, must_change}` + `Set-Cookie` |
 | POST | `/api/auth/register` | `{username, password}` | `201 {user, must_change}` + `Set-Cookie` |
 | POST | `/api/auth/logout` | — | `{ok}` и сброс cookie |
 | POST | `/api/auth/logout-all` | — | `{ok, dropped_sessions}` — завершает все сессии пользователя |
 | GET | `/api/auth/me` | — | `{user}` или 401 |
 | POST | `/api/auth/password` | `{current, new}` | `{ok, dropped_sessions}`; нужна сессия, остальные сессии закрываются |
+
+`bootstrap` — сгенерированный пароль первого запуска (`{username, password}`); он есть только пока администратор не сменил пароль, после смены приходит `null`.
 
 Сессия — cookie `studio_session` (HttpOnly, SameSite=Lax); срок задаётся настройкой `session_ttl_hours`.
 Изменяющие запросы дополнительно требуют `X-Studio-Token` (он в мета-теге страницы), кроме `/api/auth/*`.

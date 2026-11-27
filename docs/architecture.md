@@ -12,7 +12,9 @@
         ▼
 app/server.py            HTTP-транспорт, статика, SSE, диспетчеризация
 ├── app/api/dispatch.py  обработчики REST API
-├── app/auth.py          аккаунты и сессии
+├── app/auth.py          аккаунты, сессии и первый пароль
+├── app/instance.py      блокировка второго экземпляра
+├── app/backup.py        ZIP-бэкап данных
         │
         ├── app/spec.py          нормализация и проверка проекта
         ├── app/workspace.py     политика рабочих областей

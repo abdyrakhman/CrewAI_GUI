@@ -27,6 +27,8 @@ a temporary folder. All other suites set `CREWAI_STUDIO_NO_AUTH=1` and do not si
 .venv\Scripts\python.exe tests\test_runs_pagination.py
 .venv\Scripts\python.exe tests\test_run_limits.py
 .venv\Scripts\python.exe tests\test_logs_api.py
+.venv\Scripts\python.exe tests\test_installer.py
+.venv\Scripts\python.exe tests\test_docs.py
 
 :: browser (Chrome + playwright)
 .venv\Scripts\python.exe tests\test_ui.py
@@ -38,7 +40,7 @@ a temporary folder. All other suites set `CREWAI_STUDIO_NO_AUTH=1` and do not si
 ```
 
 Each prints `PASS`/`FAIL` lines and a final `… RESULT: PASS`. Exit code `0` means success.
-There are 22 suites in total.
+There are 24 suites in total.
 
 ## What each suite covers
 
@@ -60,6 +62,8 @@ There are 22 suites in total.
 | `test_runs_pagination.py` | history pagination, filters, retention and old-run deletion |
 | `test_run_limits.py` | run time limit, agent iteration cap, settings normalization |
 | `test_logs_api.py` | `/api/logs/recent`, secret redaction, diagnostics modals |
+| `test_installer.py` | `install.ps1` syntax, options, no default password, copy list |
+| `test_docs.py` | suites listed in docs, counts match, links and RU/EN pairs |
 | `test_ui.py` | interface: create project, run, result, cancel |
 | `test_ui_features.py` | roles, templates, deleting projects |
 | `test_ui_workspace.py` | workspace picker, reset, path errors |

@@ -85,6 +85,7 @@ def main() -> int:
     })
 
     server = create_server("127.0.0.1", PORT)
+    admin_password = str((getattr(server, "generated_admin", {}) or {}).get("password") or "")
     threading.Thread(target=server.serve_forever, daemon=True).start()
     time.sleep(0.6)
 
@@ -128,7 +129,7 @@ def main() -> int:
         check("backup can include runs", any(name.startswith("runs/") for name in names), str(names[:8]))
 
         # ------------------------------------------------------- no roles
-        status, login = api_json("/api/auth/login", "POST", {"username": "admin", "password": "123admin!"})
+        status, login = api_json("/api/auth/login", "POST", {"username": "admin", "password": admin_password})
         check("login has no account role", status == 200 and "role" not in login, str(login)[:100])
         users = json.loads((DATA / "users.json").read_text(encoding="utf-8"))
         check("users file has no roles", all("role" not in record for record in users.values()), str(users)[:120])
