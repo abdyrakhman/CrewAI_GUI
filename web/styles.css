@@ -313,8 +313,10 @@ input.invalid, textarea.invalid, select.invalid { border-color: var(--err); box-
 
 .hint-text { font-size: 11.5px; color: var(--muted-2); }
 
-.toggle { display: inline-flex; align-items: center; gap: 9px; cursor: pointer; font-size: 12.5px; color: var(--text-soft); user-select: none; }
-.toggle input { position: absolute; opacity: 0; pointer-events: none; }
+.toggle { position: relative; display: inline-flex; align-items: center; gap: 9px; cursor: pointer; font-size: 12.5px; color: var(--text-soft); user-select: none; }
+/* The input is visually hidden but stays inside the label: without a positioned
+   ancestor it escapes the panel scroll container and focusing it scrolls the page. */
+.toggle input { position: absolute; inset: 0 auto auto 0; width: 1px; height: 1px; margin: 0; opacity: 0; pointer-events: none; }
 .toggle .track {
   width: 38px; height: 21px; border-radius: 20px; background: var(--panel-3);
   border: 1px solid var(--line); position: relative; transition: background .16s, border-color .16s;
