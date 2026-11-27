@@ -702,6 +702,7 @@ function resolvePendingPermission(requestId, closeIfOpen = true) {
 function finishPermissions() {
   const run = state.run;
   if (!run) return;
+  const unanswered = (run.pendingPermissions || []).length;
   run.pendingPermissions = [];
   if (run.permissionOpen) {
     run.permissionOpen = null;
@@ -709,6 +710,12 @@ function finishPermissions() {
   }
   updateRunIndicator();
   updatePermissionBanner();
+  if (unanswered && run.status === "failed") {
+    toast(
+      "Запуск завершился, не дождавшись подтверждения доступа — увеличьте «Макс. время» задачи",
+      "err",
+    );
+  }
 }
 
 function reconnectStream() {

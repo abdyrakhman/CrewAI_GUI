@@ -189,6 +189,20 @@ def _timeout_seconds(settings: dict) -> float:
     return minutes * 60 if minutes > 0 else 0.0
 
 
+CONFIRM_MIN_EXECUTION_TIME = 900
+
+
+def _effective_execution_time(requested: int, confirm_changes: bool) -> tuple[int, bool]:
+    """A task waiting for approval needs room: raise tiny limits to 15 minutes."""
+    try:
+        requested = int(requested)
+    except (TypeError, ValueError):
+        requested = 0
+    if confirm_changes and 0 < requested < CONFIRM_MIN_EXECUTION_TIME:
+        return CONFIRM_MIN_EXECUTION_TIME, True
+    return requested, False
+
+
 def _effective_max_iter(requested: int, cap: int) -> int:
     try:
         requested = int(requested)
@@ -703,7 +717,19 @@ class RunManager:
                 "reasoning": bool(spec.get("reasoning")),
                 "verbose": bool(state.crew_spec.get("verbose")),
             }
-            max_exec = int(spec.get("max_execution_time") or 0)
+            max_exec, raised = _effective_execution_time(
+                spec.get("max_execution_time") or 0, bool(spec.get("confirm_changes"))
+            )
+            if raised:
+                state.emit(
+                    "warning",
+                    {
+                        "message": (
+                            f"«{spec.get('role') or 'Агент'}»: лимит времени задачи поднят до 900 с, "
+                            "чтобы вы успели подтвердить изменения"
+                        ),
+                    },
+                )
             if max_exec > 0:
                 kwargs["max_execution_time"] = max_exec
             if kwargs["reasoning"]:
