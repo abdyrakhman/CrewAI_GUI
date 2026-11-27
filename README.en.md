@@ -48,6 +48,37 @@ editing.
 | ![Workspace picker](docs/screenshots/en/workspace-picker.png) | ![History](docs/screenshots/en/history.png) |
 | Workspace picker | Run history |
 
+## One-command install
+
+No clone needed: the installer downloads the archive from GitHub (no git), creates the environment,
+installs dependencies and makes a shortcut.
+
+```powershell
+$f = "$env:TEMP\crewai-install.ps1"
+iwr https://raw.githubusercontent.com/abdyrakhman/CrewAI_GUI/main/install.ps1 -UseBasicParsing -OutFile $f
+powershell -ExecutionPolicy Bypass -File $f
+```
+
+From a downloaded folder:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\install.ps1
+```
+
+Options:
+
+| Option | Meaning |
+|---|---|
+| `-InstallDir "D:\Tools\CrewAI"` | target folder (default `%LOCALAPPDATA%\CrewAI Studio`) |
+| `-Run` | start right after installation |
+| `-Port 8080` | port for `-Run` |
+| `-Source C:\path\crewai.zip` | offline install from a ZIP or folder |
+| `-PythonExe C:\Python312\python.exe` | explicit Python 3.10–3.13 |
+| `-NoShortcut` / `-NoDesktop` | skip shortcuts |
+| `-SkipDeps` | copy files and create the environment only |
+
+Python 3.10–3.13 (3.12 recommended) and internet for dependencies are required. The `data` folder survives upgrades.
+
 ## Quick start
 
 1. Install [Python 3.10–3.13](https://www.python.org/downloads/) (tick **Add python.exe to PATH**).
