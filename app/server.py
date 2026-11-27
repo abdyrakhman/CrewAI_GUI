@@ -562,8 +562,6 @@ class StudioServer(ThreadingHTTPServer):
 
 def create_server(host: str, port: int) -> StudioServer:
     created_admin = auth.ensure_default_admin()
-    if created_admin:
-        print(f"  Создан администратор «{created_admin}». Смените пароль в настройках безопасности.")
     store = Store()
     store.prune_runs()
     manager = RunManager(store)
@@ -574,6 +572,15 @@ def create_server(host: str, port: int) -> StudioServer:
         {"store": store, "manager": manager, "session_token": "", "allowed_hosts": set()},
     )
     server = StudioServer((host, port), handler)
+    if created_admin:
+        server.generated_admin = created_admin
+        if created_admin.get("rotated"):
+            print("  Прежний пароль администратора по умолчанию сброшен на случайный.")
+        else:
+            print("  Создан администратор.")
+        print(f"  Логин:  {created_admin['username']}")
+        print(f"  Пароль: {created_admin['password']}")
+        print("  Пароль показан один раз — при первом входе приложение попросит его сменить.")
     actual_port = server.server_address[1]
     handler.session_token = secrets.token_urlsafe(24)
     hosts = {f"{name}:{actual_port}" for name in {host, "127.0.0.1", "localhost", "[::1]"}}

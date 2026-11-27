@@ -26,7 +26,10 @@ SESSION_TTL = 7 * 24 * 3600
 PBKDF2_ROUNDS = 200_000
 USERNAME_RE = re.compile(r"^[A-Za-z0-9_.\-]{3,32}$")
 
-DEFAULT_ADMIN = ("admin", "123admin!")
+DEFAULT_ADMIN_USERNAME = "admin"
+# Only used to detect and rotate installations that still have the old published password.
+LEGACY_DEFAULT_PASSWORD = "123admin!"
+PASSWORD_ALPHABET = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 DEFAULT_TTL_HOURS = 12
 MAX_TTL_HOURS = 24 * 30
 
@@ -138,17 +141,47 @@ def migrate_must_change() -> None:
             save_users(users)
 
 
-def ensure_default_admin() -> str | None:
-    """Create the first administrator when no accounts exist yet."""
+def generate_password(length: int = 16) -> str:
+    """A readable random password: no look-alike characters."""
+    return "".join(secrets.choice(PASSWORD_ALPHABET) for _ in range(length))
+
+
+def rotate_legacy_default() -> dict | None:
+    """If an account still uses the old published password, replace it and report it."""
+    with _lock:
+        users = dict(load_users())
+        for username, record in users.items():
+            if not verify_password(LEGACY_DEFAULT_PASSWORD, record):
+                continue
+            password = generate_password()
+            digest, salt = hash_password(password)
+            record.update({
+                "password_hash": digest,
+                "salt": salt,
+                "must_change": True,
+                "updated_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            })
+            users[username] = record
+            save_users(users)
+            return {"username": username, "password": password, "rotated": True}
+    return None
+
+
+def ensure_default_admin() -> dict | None:
+    """Create the first administrator, or rotate the old published password.
+
+    Returns ``{"username", "password", "rotated"}`` when a password was generated,
+    so the caller can show it once in the console.
+    """
     if has_users():
         migrate_roles()
         migrate_must_change()
-        return None
-    username = os.environ.get("CREWAI_STUDIO_ADMIN_USER", DEFAULT_ADMIN[0])
-    password = os.environ.get("CREWAI_STUDIO_ADMIN_PASSWORD", DEFAULT_ADMIN[1])
+        return rotate_legacy_default()
+    username = os.environ.get("CREWAI_STUDIO_ADMIN_USER", DEFAULT_ADMIN_USERNAME)
+    password = os.environ.get("CREWAI_STUDIO_ADMIN_PASSWORD") or generate_password()
     try:
         create_user(username, password, must_change=True)
-        return username
+        return {"username": username, "password": password, "rotated": False}
     except ValueError:
         return None
 

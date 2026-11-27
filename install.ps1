@@ -212,7 +212,8 @@ try {
     Write-Host "  Folder:   $InstallDir"
     Write-Host "  Start:    $launcher"
     Write-Host "  Address:  http://127.0.0.1:$Port"
-    Write-Host "  First sign-in: admin / 123admin! (the app asks to change it at once)"
+    Write-Host "  On the first start the generated admin password is printed in the console."
+    Write-Host "  The app asks to change it at the first sign-in."
     Write-Host ""
     if ($Run) {
         Write-Step "Starting CrewAI Studio..."

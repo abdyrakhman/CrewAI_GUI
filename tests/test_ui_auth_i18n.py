@@ -37,6 +37,7 @@ def check(name: str, condition: bool, detail: str = "") -> None:
 
 def main() -> int:
     server = create_server("127.0.0.1", PORT)
+    admin_password = str((getattr(server, "generated_admin", {}) or {}).get("password") or "")
     threading.Thread(target=server.serve_forever, daemon=True).start()
     time.sleep(0.6)
 
@@ -61,7 +62,7 @@ def main() -> int:
 
             page.click("#to-login")
             page.fill("#login-user", "admin")
-            page.fill("#login-pass", "123admin!")
+            page.fill("#login-pass", admin_password)
             page.click("#login-submit")
             page.wait_for_timeout(1800)
             check("password screen is translated", "Change the password" in page.inner_text("body"),

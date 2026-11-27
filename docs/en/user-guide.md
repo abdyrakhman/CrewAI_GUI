@@ -116,7 +116,8 @@ app handles it for you.
 - The login and password-change pages follow the interface language setting (RU/EN).
 
 The interface is protected by a password. On first start the administrator is created as
-**admin / 123admin!** — change it in **Settings → Account**.
+**admin** and a random password printed in the console on the first start. The first sign-in asks
+you to change it.
 
 - Sign in at `/login`; the session lives in an HttpOnly cookie (12 hours by default).
 - The first sign-in with the default password opens a mandatory password change screen; until it is done
