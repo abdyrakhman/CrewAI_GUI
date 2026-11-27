@@ -6,8 +6,8 @@ machine should not see your projects or change your settings.
 ## First run
 
 - If `data/users.json` is missing or empty, the administrator **admin** is created with a random
-  password. Login and password are printed once in the console — save them and change the password
-  at sign-in.
+  password. Login and password are printed in the console and **shown on the login page** until the
+  password is changed; afterwards it is never displayed again.
 - Override with `CREWAI_STUDIO_ADMIN_USER` and `CREWAI_STUDIO_ADMIN_PASSWORD` (used only while no accounts exist).
 - That account is marked `must_change`.
 

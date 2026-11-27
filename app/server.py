@@ -336,6 +336,7 @@ class StudioHandler(BaseHTTPRequestHandler):
                 "has_users": auth.has_users(),
                 "user": user,
                 "language": "en" if language == "en" else "ru",
+                "bootstrap": auth.bootstrap_credentials(),
             })
             return True
 
@@ -580,7 +581,8 @@ def create_server(host: str, port: int) -> StudioServer:
             print("  Создан администратор.")
         print(f"  Логин:  {created_admin['username']}")
         print(f"  Пароль: {created_admin['password']}")
-        print("  Пароль показан один раз — при первом входе приложение попросит его сменить.")
+        print("  Пароль также показан на экране входа, пока его не сменят.")
+        print("  При первом входе приложение попросит задать новый пароль.")
     actual_port = server.server_address[1]
     handler.session_token = secrets.token_urlsafe(24)
     hosts = {f"{name}:{actual_port}" for name in {host, "127.0.0.1", "localhost", "[::1]"}}

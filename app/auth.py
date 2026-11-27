@@ -35,6 +35,8 @@ MAX_TTL_HOURS = 24 * 30
 
 _lock = threading.RLock()
 _users_cache: dict | None = None
+# Password generated for the very first sign-in; shown on the login screen until changed.
+_bootstrap: dict | None = None
 
 
 def _read_json(path: Path, fallback):
@@ -86,7 +88,9 @@ def get_user(username: str) -> dict | None:
     return load_users().get(username)
 
 
-def create_user(username: str, password: str, must_change: bool = False) -> dict:
+def create_user(
+    username: str, password: str, must_change: bool = False, bootstrap_generated: bool = False
+) -> dict:
     username = str(username or "").strip()
     password = str(password or "")
     if not USERNAME_RE.match(username):
@@ -104,6 +108,7 @@ def create_user(username: str, password: str, must_change: bool = False) -> dict
             "password_hash": digest,
             "salt": salt,
             "must_change": must_change,
+            "bootstrap_generated": bootstrap_generated,
             "created_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
         }
         save_users(users)
@@ -159,10 +164,67 @@ def rotate_legacy_default() -> dict | None:
                 "password_hash": digest,
                 "salt": salt,
                 "must_change": True,
+                "bootstrap_generated": True,
                 "updated_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
             })
             users[username] = record
             save_users(users)
+            set_bootstrap(username, password)
+            return {"username": username, "password": password, "rotated": True}
+    return None
+
+
+def set_bootstrap(username: str, password: str) -> None:
+    global _bootstrap
+    with _lock:
+        _bootstrap = {"username": username, "password": password}
+
+
+def clear_bootstrap(username: str | None = None) -> None:
+    global _bootstrap
+    with _lock:
+        if username is None or (_bootstrap and _bootstrap.get("username") == username):
+            _bootstrap = None
+
+
+def bootstrap_credentials() -> dict | None:
+    """The generated password shown on the login screen until it is changed."""
+    global _bootstrap
+    with _lock:
+        if not _bootstrap:
+            return None
+        record = get_user(_bootstrap["username"])
+        if (
+            not record
+            or not record.get("must_change")
+            or not record.get("bootstrap_generated")
+            or not verify_password(_bootstrap["password"], record)
+        ):
+            _bootstrap = None
+            return None
+        return dict(_bootstrap)
+
+
+def _ensure_bootstrap_exists() -> dict | None:
+    """After a restart before the first sign-in, generate a fresh visible password."""
+    if bootstrap_credentials():
+        return None
+    with _lock:
+        users = dict(load_users())
+        for username, record in users.items():
+            if not record.get("must_change") or not record.get("bootstrap_generated"):
+                continue
+            password = generate_password()
+            digest, salt = hash_password(password)
+            record.update({
+                "password_hash": digest,
+                "salt": salt,
+                "bootstrap_generated": True,
+                "updated_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            })
+            users[username] = record
+            save_users(users)
+            set_bootstrap(username, password)
             return {"username": username, "password": password, "rotated": True}
     return None
 
@@ -176,12 +238,17 @@ def ensure_default_admin() -> dict | None:
     if has_users():
         migrate_roles()
         migrate_must_change()
-        return rotate_legacy_default()
+        rotated = rotate_legacy_default()
+        return rotated or _ensure_bootstrap_exists()
     username = os.environ.get("CREWAI_STUDIO_ADMIN_USER", DEFAULT_ADMIN_USERNAME)
-    password = os.environ.get("CREWAI_STUDIO_ADMIN_PASSWORD") or generate_password()
+    env_password = os.environ.get("CREWAI_STUDIO_ADMIN_PASSWORD") or ""
+    generated = not bool(env_password)
+    password = env_password or generate_password()
     try:
-        create_user(username, password, must_change=True)
-        return {"username": username, "password": password, "rotated": False}
+        create_user(username, password, must_change=True, bootstrap_generated=generated)
+        if generated:
+            set_bootstrap(username, password)
+        return {"username": username, "password": password, "rotated": False, "shown": generated}
     except ValueError:
         return None
 
@@ -200,10 +267,12 @@ def change_password(username: str, current: str, new_password: str) -> None:
             "password_hash": digest,
             "salt": salt,
             "must_change": False,
+            "bootstrap_generated": False,
             "updated_at": time.strftime("%Y-%m-%dT%H:%M:%S"),
         })
         users[username] = record
         save_users(users)
+    clear_bootstrap(username)
 
 
 # ------------------------------------------------------------------ sessions

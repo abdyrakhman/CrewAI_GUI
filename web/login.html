@@ -41,6 +41,17 @@
   .error { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: #2a1620; border: 1px solid #5b2333; color: #ffb4c0; font-size: 13px; }
   .switch { margin-top: 14px; text-align: center; font-size: 13px; color: #8b91a7; }
   .switch a { color: #b9a5ff; cursor: pointer; text-decoration: none; }
+  .bootstrap {
+    margin-bottom: 16px; padding: 12px 14px; border-radius: 12px;
+    background: rgba(139, 92, 246, .10); border: 1px solid rgba(139, 92, 246, .45);
+  }
+  .bootstrap-title { font-size: 12px; font-weight: 700; color: #c9b8ff; text-transform: uppercase; letter-spacing: .04em; }
+  .bootstrap-hint { margin: 4px 0 8px; color: #aab1c5; font-size: 12px; }
+  .bootstrap-creds { font-family: ui-monospace, Consolas, monospace; font-size: 14px; color: #fff; word-break: break-all; }
+  .bootstrap-copy {
+    margin-top: 8px; width: auto; padding: 5px 10px; font-size: 12px; font-weight: 600;
+    background: transparent; border: 1px solid #4b3f77; color: #c9b8ff; border-radius: 8px;
+  }
   .hidden { display: none; }
 </style>
 </head>
@@ -52,6 +63,13 @@
         <h1>CrewAI Studio</h1>
         <div class="sub" id="brand-sub" data-i18n="brand.sub">локальный интерфейс</div>
       </div>
+    </div>
+
+    <div id="bootstrap-block" class="bootstrap hidden">
+      <div class="bootstrap-title" data-i18n="bootstrap.title">Первый запуск</div>
+      <p class="bootstrap-hint" data-i18n="bootstrap.hint">Введите эти данные для входа. Пароль будет показан, пока вы его не смените.</p>
+      <div class="bootstrap-creds"><code id="bootstrap-user"></code> / <code id="bootstrap-pass"></code></div>
+      <button type="button" class="bootstrap-copy" id="bootstrap-copy" data-i18n="bootstrap.copy">Скопировать</button>
     </div>
 
     <div id="login-block">

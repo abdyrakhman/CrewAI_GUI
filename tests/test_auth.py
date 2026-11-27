@@ -93,6 +93,21 @@ def main() -> int:
     threading.Thread(target=server.serve_forever, daemon=True).start()
     time.sleep(0.6)
 
+    status, payload, _ = call("/api/auth/state")
+    bootstrap = (payload or {}).get("bootstrap") or {}
+    check("login screen gets the generated password", bootstrap.get("password") == admin_password,
+          str(bootstrap)[:100])
+
+    # a restart before the first sign-in must show a fresh, valid password
+    auth.clear_bootstrap()
+    restarted = auth.ensure_default_admin() or {}
+    check("restart regenerates the bootstrap password", restarted.get("rotated") is True, str(restarted)[:80])
+    check("previous bootstrap stops working",
+          not auth.verify_password(admin_password, auth.get_user("admin") or {}))
+    admin_password = str(restarted.get("password") or "")
+    check("new bootstrap is valid",
+          bool(admin_password) and auth.verify_password(admin_password, auth.get_user("admin") or {}))
+
     try:
         status, payload, _ = call("/api/auth/state")
         check("admin is seeded on first run", status == 200 and payload.get("has_users") is True, str(payload)[:120])
@@ -130,6 +145,9 @@ def main() -> int:
 
         status, payload, _ = call("/api/info", cookie=cookie)
         check("API opens after the change", status == 200 and payload.get("app"), str(status))
+        status, payload, _ = call("/api/auth/state")
+        check("password is no longer shown after the change", (payload or {}).get("bootstrap") is None,
+              str(payload.get("bootstrap"))[:80])
 
         status, payload, _ = call("/api/auth/login", "POST", {"username": "admin", "password": admin_password})
         check("old password stops working", status == 401, str(status))
